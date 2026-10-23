@@ -1,5 +1,6 @@
 """Rutas de datos, compatibles con ejecución normal y con PyInstaller."""
 
+import os
 import sys
 from pathlib import Path
 
@@ -14,6 +15,12 @@ def project_root() -> Path:
 
 def data_dir() -> Path:
     return project_root() / "data"
+
+
+def config_dir() -> Path:
+    """Carpeta del usuario para opciones e historial (%APPDATA%\\Yomitoru)."""
+    base = os.environ.get("APPDATA")
+    return Path(base) / "Yomitoru" if base else Path.home() / ".yomitoru"
 
 
 def find_db() -> Path | None:

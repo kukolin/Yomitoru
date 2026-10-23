@@ -5,8 +5,10 @@ imagen al portapapeles de Windows y espera a que la app la detecte sola.
 """
 
 import ctypes
+import gc
 import io
 import os
+import random
 import time
 import tkinter as tk
 
@@ -30,7 +32,7 @@ def tk_root():
 
 
 @pytest.fixture
-def app(tk_root):
+def app(tk_root, tmp_path):
     db = find_db()
     if db is None:
         pytest.skip("Falta data/kanjidic2.sqlite")
@@ -39,10 +41,15 @@ def app(tk_root):
         engine.check()
     except OcrUnavailableError as e:
         pytest.skip(str(e))
-    a = YomitoruApp(tk.Toplevel(tk_root), KanjiDictionary(db), engine, interval_ms=100, use_tray=False)
+    a = YomitoruApp(tk.Toplevel(tk_root), KanjiDictionary(db), engine, interval_ms=100, use_tray=False,
+                    data_dir=tmp_path)
     yield a
     a.executor.shutdown(wait=True)
     a.quit()
+    # liberar la ventana acá, en el hilo de Tk: si el recolector la libera más tarde
+    # desde el hilo del OCR, Tk se cuelga (las variables de Tk no son thread-safe)
+    del a
+    gc.collect()
 
 
 def pump(app, until, timeout=10.0):
@@ -109,10 +116,89 @@ def _copy_image_to_clipboard(image):
                     reason="modifica el portapapeles; activar con YOMITORU_E2E_CLIPBOARD=1")
 def test_real_clipboard(app):
     assert pump(app, lambda: app.ocr_ready)
-    # otra imagen primero: si el portapapeles ya tenía 勉強 de una corrida anterior,
-    # volver a copiarla no cuenta como captura nueva (mismo hash)
-    _copy_image_to_clipboard(render("猫"))
-    assert pump(app, lambda: app.window.text_var.get() == "猫")
-    _copy_image_to_clipboard(render("勉強"))
+    # tamaño al azar: si el portapapeles ya tenía la misma imagen de una corrida anterior,
+    # volver a copiarla no contaría como captura nueva (mismo hash)
+    size = random.randint(40, 60)
+    _copy_image_to_clipboard(render("猫", size=size))
+    assert pump(app, lambda: app.window.text_var.get() == "猫"), (app.window.text_var.get(), app.window.status_var.get())
+    _copy_image_to_clipboard(render("勉強", size=size))
     assert pump(app, lambda: app.window.text_var.get() == "勉強")
     assert "べん" in labels(app.window.scroll.inner)
+
+
+def test_history_arrows_and_window(app):
+    for text in ("日本", "猫", "勉強"):
+        app.search(text)
+    w = app.window
+    assert w.back_btn.instate(["!disabled"]) and w.fwd_btn.instate(["disabled"])
+    w.back_btn.invoke()
+    assert w.text_var.get() == "猫" and "2 de 3" in w.status_var.get()
+    w.back_btn.invoke()
+    assert w.text_var.get() == "日本" and w.back_btn.instate(["disabled"])
+    w.fwd_btn.invoke()
+    assert w.text_var.get() == "猫"
+    # navegar no agrega entradas
+    assert [e.text for e in app.history.entries] == ["日本", "猫", "勉強"]
+
+    w.show_history()
+    hw = w.history_window
+    assert [hw.tree.item(i, "values")[0] for i in hw.tree.get_children()] == ["勉強", "猫", "日本"]
+    assert hw.tree.selection() == ("1",)  # resalta la entrada que se está mostrando
+    hw.tree.selection_set("0")
+    hw.open_selected()
+    assert w.text_var.get() == "日本"
+    app.clear_history()
+    assert hw.tree.get_children() == () and w.back_btn.instate(["disabled"])
+    hw.win.destroy()
+
+
+def test_history_persists_between_sessions(app, tk_root, tmp_path):
+    app.search("漢字")
+    assert (tmp_path / "history.json").exists()
+    again = YomitoruApp(tk.Toplevel(tk_root), app.dictionary, app.engine, use_tray=False, data_dir=tmp_path)
+    try:
+        assert again.history.entries[-1].text == "漢字"
+        again.history_back()
+        assert again.window.text_var.get() == "漢字"
+    finally:
+        again.executor.shutdown(wait=True)
+        again.quit()
+        del again
+        gc.collect()
+
+
+def test_options_menu_toggles(app, tmp_path):
+    w = app.window
+    menu = w.options_menu
+    labels = [menu.entrycget(i, "label") for i in range(menu.index("end") + 1)
+              if menu.type(i) == "checkbutton"]
+    assert "Modo oscuro" in labels and "Siempre visible" in labels and "Vigilar portapapeles" in labels
+
+    app.set_option("dark_mode", False)
+    app.search("日")
+    light_bg = w.scroll.inner.winfo_children()[0].cget("bg")
+    app.set_option("dark_mode", True)
+    assert w.option_vars["dark_mode"].get() is True
+    dark_bg = w.scroll.inner.winfo_children()[0].cget("bg")
+    assert light_bg != dark_bg  # las tarjetas se redibujan con el tema nuevo
+
+    assert "day, sun, Japan, counter for days" in labels_of(w)
+    app.set_option("show_english", False)
+    assert "day, sun, Japan, counter for days" not in labels_of(w)
+
+    app.set_option("always_on_top", True)
+    assert bool(app.root.attributes("-topmost"))
+
+    app.set_option("save_history", False)
+    assert not (tmp_path / "history.json").exists()
+    app.search("猫")
+    assert not (tmp_path / "history.json").exists() and app.history.entries[-1].text == "猫"
+
+    app.set_option("watch_clipboard", False)
+    assert not app.watching and "pausa" in w.status_var.get()
+    saved = __import__("json").loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+    assert saved["dark_mode"] and saved["always_on_top"] and not saved["watch_clipboard"]
+
+
+def labels_of(window):
+    return labels(window.scroll.inner)

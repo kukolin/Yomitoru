@@ -11,7 +11,8 @@ App de escritorio para Windows 10/11 · funciona offline · gratis y de código 
 [Preguntas frecuentes](#preguntas-frecuentes) ·
 [Cómo funciona](#cómo-funciona-por-dentro)
 
-<img src="docs/screenshot.png" alt="Ventana de Yomitoru mostrando los kanji 食, 日 y 本" width="420">
+<img src="docs/screenshot.png" alt="Yomitoru en modo claro mostrando los kanji 猫 y 好" width="380">
+<img src="docs/screenshot-dark.png" alt="Yomitoru en modo oscuro" width="380">
 
 </div>
 
@@ -36,6 +37,8 @@ Por cada kanji reconocido te muestra:
 | **jisho.org** | un link a la ficha completa del kanji |
 
 Si capturaste una palabra o una frase, además aparece un link para buscarla completa en jisho.org. Y si el reconocimiento se equivoca, el texto se puede **corregir a mano** y volver a buscar.
+
+Cada búsqueda queda en el **historial**, así que podés volver a un kanji de hace un rato con las flechas ◀ ▶. Y tiene **modo oscuro**.
 
 **Todo funciona sin internet**: el reconocimiento de texto usa el OCR que ya trae Windows y el diccionario viene incluido. Solo los links a jisho.org necesitan conexión.
 
@@ -80,11 +83,25 @@ Presioná **Win+R**, escribí `shell:startup` y Enter. En la carpeta que se abre
 
 | | |
 | --- | --- |
-| **Siempre visible** | mantiene la ventana encima de las demás |
-| **Vigilar portapapeles** | pausa o reanuda la detección de capturas (también desde el ícono de la bandeja) |
-| **Acerca de…** | versión, autor, licencias y links |
-| **X** de la ventana | la esconde; Yomitoru sigue en la bandeja |
+| **◀ ▶** (o **Alt+←** / **Alt+→**) | ir a la búsqueda anterior o a la siguiente del historial |
+| **Historial** (o **Ctrl+H**) | lista de todas las búsquedas con su fecha; doble clic para volver a abrir una |
+| **Opciones** | menú con todo lo que se puede encender y apagar (ver abajo) |
+| **Acerca de…** | versión, autor, licencias y links (también desde el ícono de la bandeja) |
+| **Esc** o la **X** de la ventana | la esconde; Yomitoru sigue en la bandeja |
 | Clic derecho en **読** → **Salir** | cierra Yomitoru del todo |
+
+**Opciones** (se recuerdan para la próxima vez):
+
+| Opción | Qué hace | De fábrica |
+| --- | --- | --- |
+| Vigilar portapapeles | detecta las capturas nuevas; apagalo para pausar (también desde la bandeja) | encendida |
+| Mostrar la ventana al capturar | trae la ventana al frente con cada captura | encendida |
+| Siempre visible | mantiene la ventana encima de las demás | apagada |
+| Modo oscuro | colores oscuros, incluida la barra de título | igual que Windows |
+| Mostrar también el significado en inglés | agrega el inglés debajo cuando hay traducción al español | encendida |
+| Recordar el historial al cerrar Yomitoru | guarda las búsquedas en disco; si lo apagás, el historial solo dura mientras la app está abierta y se borra el guardado | encendida |
+
+Las opciones y el historial (solo el texto, nunca las imágenes) se guardan en `%APPDATA%\Yomitoru`. Para empezar de cero, borrá esa carpeta.
 
 ## Preguntas frecuentes
 
@@ -92,7 +109,7 @@ Presioná **Win+R**, escribí `shell:startup` y Enter. En la carpeta que se abre
 No. Solo para abrir los links a jisho.org.
 
 **¿Guarda mis capturas o las manda a algún lado?**
-No. Las imágenes se procesan en memoria, en tu PC, y no se guardan ni se envían a ningún servidor.
+No. Las imágenes se procesan en memoria, en tu PC, y no se guardan ni se envían a ningún servidor. El historial guarda solo el texto reconocido y la fecha, en tu PC (`%APPDATA%\Yomitoru\history.json`), y lo podés borrar desde **Historial → Borrar historial…** o dejar de guardarlo desde **Opciones**.
 
 **No reconoce 一, 二 o 三.**
 Es una limitación del OCR de Windows: los kanji formados solo por rayas horizontales no los detecta como texto. Escribilos a mano en el campo de texto.
@@ -151,7 +168,10 @@ Opciones de línea de comandos:
 | [`dictionary.py`](yomitoru/dictionary.py) | Parsea el XML de KANJIDIC2, lo guarda en SQLite y hace las consultas. El on'yomi se guarda ya convertido de katakana a hiragana. |
 | [`kana.py`](yomitoru/kana.py) | Conversión katakana → hiragana y detección de kanji (rangos Unicode CJK). |
 | [`lookup.py`](yomitoru/lookup.py) | Del texto reconocido a la lista de kanji (sin repetir, ignorando kana y signos) y los links a jisho.org. |
-| [`ui.py`](yomitoru/ui.py), [`tray.py`](yomitoru/tray.py), [`app.py`](yomitoru/app.py) | Ventana en Tkinter, ícono de bandeja (pystray) y la orquestación. El OCR corre en un hilo aparte para que la ventana no se congele. |
+| [`history.py`](yomitoru/history.py) | Historial cronológico (hasta 500 búsquedas) con un cursor para ◀ ▶, guardado en JSON. |
+| [`settings.py`](yomitoru/settings.py) | Las opciones del menú, guardadas en JSON. |
+| [`theme.py`](yomitoru/theme.py) | Paletas clara y oscura aplicadas a ttk, a los menús y a la barra de título de Windows. |
+| [`ui.py`](yomitoru/ui.py), [`tray.py`](yomitoru/tray.py), [`app.py`](yomitoru/app.py) | Ventanas en Tkinter (principal, historial, «Acerca de…»), ícono de bandeja (pystray) y la orquestación. El OCR corre en un hilo aparte para que la ventana no se congele. |
 
 ### El truco del OCR
 
@@ -184,7 +204,7 @@ pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-Los tests cubren el parseo del diccionario (日 → にち/じつ, ひ/か), la conversión katakana→hiragana, el OCR sobre imágenes generadas con Pillow y el flujo completo con la ventana real. Para probar también con el portapapeles de Windows (lo sobrescribe), definí `YOMITORU_E2E_CLIPBOARD=1` antes de correr pytest.
+Los tests cubren el parseo del diccionario (日 → にち/じつ, ひ/か), la conversión katakana→hiragana, el OCR sobre imágenes generadas con Pillow, el historial y las opciones, y el flujo completo con la ventana real (flechas, ventana de historial, modo oscuro). Para probar también con el portapapeles de Windows (lo sobrescribe), definí `YOMITORU_E2E_CLIPBOARD=1` antes de correr pytest.
 
 Para generar el ejecutable:
 

@@ -10,26 +10,37 @@ import tkinter as tk
 from concurrent.futures import ThreadPoolExecutor
 from tkinter import messagebox
 
+from pathlib import Path
+
 from PIL import Image
 
 from . import APP_NAME
 from .clipboard import ClipboardWatcher
 from .dictionary import KanjiDictionary
+from .history import History, HistoryEntry, format_when
 from .lookup import lookup_text
 from .ocr import OcrEngine, OcrUnavailableError, create_engine
-from .paths import find_db
+from .paths import config_dir, find_db
+from .settings import Settings
 from .tray import create_tray
-from .ui import MainWindow
+from .ui import WAITING, MainWindow
+
+_DEFAULT = object()
 
 
 class YomitoruApp:
     def __init__(self, root: tk.Tk | tk.Toplevel, dictionary: KanjiDictionary, engine: OcrEngine,
-                 interval_ms: int = 500, use_tray: bool = True):
+                 interval_ms: int = 500, use_tray: bool = True, data_dir: Path | None = _DEFAULT):
         self.root = root
         self.dictionary = dictionary
         self.engine = engine
         self.interval_ms = interval_ms
-        self.watching = True
+        # opciones e historial en %APPDATA%\Yomitoru (data_dir=None: no guardar nada, para tests)
+        cfg = config_dir() if data_dir is _DEFAULT else data_dir
+        self.settings_path = cfg / "settings.json" if cfg else None
+        self.settings = Settings.load(self.settings_path)
+        self.history = History.load(cfg / "history.json" if cfg else None)
+        self.history.persist = self.settings.save_history
         self.running = True
         self.ocr_ready = False
         self.watcher = ClipboardWatcher()
@@ -37,8 +48,9 @@ class YomitoruApp:
         # Tk no es thread-safe: los hilos (OCR, bandeja) encolan funciones que corre el hilo de la UI
         self.calls: queue.Queue = queue.Queue()
 
-        self.window = MainWindow(root, on_search=self.search, on_watch_toggle=self.set_watching,
-                                 on_close=self.on_close, dict_meta=dictionary.meta())
+        self.window = MainWindow(root, self, on_close=self.on_close, dict_meta=dictionary.meta())
+        if not self.watching:
+            self.window.set_status("Vigilancia en pausa (se activa en Opciones).")
         self.tray = None
         if use_tray:
             self.tray = create_tray(
@@ -82,6 +94,31 @@ class YomitoruApp:
         self.window.bring_to_front()
         self.window.show_about()
 
+    @property
+    def watching(self) -> bool:
+        return self.settings.watch_clipboard
+
+    # --- opciones
+    def set_option(self, name: str, value: bool):
+        if name == "watch_clipboard":
+            self.set_watching(value)
+            return
+        setattr(self.settings, name, value)
+        self.settings.save(self.settings_path)
+        self.window.sync_option(name, value)
+        if name == "always_on_top":
+            self.window.apply_topmost()
+        elif name == "dark_mode":
+            self.window.apply_theme()
+        elif name == "show_english":
+            self.window.rerender()
+        elif name == "save_history":
+            self.history.persist = value
+            if value:
+                self.history.save()
+            else:
+                self.history.delete_file()
+
     # --- portapapeles
     def _poll_clipboard(self):
         if not self.running:
@@ -93,18 +130,19 @@ class YomitoruApp:
         self.root.after(self.interval_ms, self._poll_clipboard)
 
     def set_watching(self, watching: bool):
-        self.watching = watching
-        self.window.set_watching(watching)
+        self.settings.watch_clipboard = watching
+        self.settings.save(self.settings_path)
+        self.window.sync_option("watch_clipboard", watching)
         if watching:
             self.watcher.prime()  # no procesar lo copiado mientras estaba en pausa
-        self.window.set_status("Esperando una captura (Win+Shift+S)…" if watching
-                               else "Vigilancia en pausa.")
+        self.window.set_status(WAITING if watching else "Vigilancia en pausa.")
         if self.tray:
             self.tray.refresh()
 
     def on_capture(self, image: Image.Image):
         self.window.set_capture(image)
-        self.window.bring_to_front()
+        if self.settings.bring_to_front:
+            self.window.bring_to_front()
         if not self.ocr_ready:
             self.window.set_status("Captura recibida, pero el OCR no está disponible.")
             return
@@ -128,6 +166,35 @@ class YomitoruApp:
         n = len(result.kanji)
         self.window.set_status(f"{n} kanji encontrado{'s' if n != 1 else ''}." if result.text
                                else "No se reconoció texto.")
+        if result.text:
+            self.history.add(result.text)
+        self.window.update_nav()
+
+    # --- historial
+    def history_back(self):
+        self._show_history_entry(self.history.back())
+
+    def history_forward(self):
+        self._show_history_entry(self.history.forward())
+
+    def open_history(self, index: int):
+        self._show_history_entry(self.history.go(index))
+
+    def clear_history(self):
+        self.history.clear()
+        self.history.delete_file()
+        self.window.update_nav()
+        self.window.set_status("Historial borrado.")
+
+    def _show_history_entry(self, entry: HistoryEntry | None):
+        if entry is None:
+            return
+        self.window.set_capture(None)  # las capturas no se guardan, solo el texto
+        self.window.set_text(entry.text)
+        self.window.show_result(lookup_text(entry.text, self.dictionary))
+        self.window.set_status(f"Historial: {self.history.pos + 1} de {len(self.history)} · "
+                               f"{format_when(entry.when)}")
+        self.window.update_nav()
 
     # --- salida
     def on_close(self):

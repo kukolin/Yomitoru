@@ -1,5 +1,12 @@
 # Cambios
 
+## [0.2.0] — 2026-10-23
+
+- **Historial**: cada búsqueda se guarda con su fecha. Botón «Historial» (Ctrl+H) con la lista completa, y flechas ◀ ▶ (Alt+← / Alt+→) para ir a la búsqueda anterior o siguiente.
+- **Menú «Opciones»** con todo lo que se enciende y apaga, recordado entre sesiones: vigilar portapapeles, mostrar la ventana al capturar, siempre visible, modo oscuro, significado en inglés y recordar el historial.
+- **Modo oscuro**, incluida la barra de título de Windows. La primera vez sigue el tema de Windows.
+- «Acerca de…» también desde el ícono de la bandeja.
+
 ## [0.1.0] — 2026-10-23
 
 Primera versión pública.
@@ -14,4 +21,5 @@ Primera versión pública.
 - Motor alternativo opcional: manga-ocr.
 - Ejecutable portable para Windows (`Yomitoru.exe`).
 
+[0.2.0]: https://github.com/kukolin/Yomitoru/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kukolin/Yomitoru/releases/tag/v0.1.0
