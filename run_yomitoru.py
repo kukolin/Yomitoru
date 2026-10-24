@@ -1,4 +1,4 @@
-"""Lanzador (usado por PyInstaller, que necesita un script y no un `-m paquete`)."""
+"""Launcher (used by PyInstaller, which needs a script rather than `-m package`)."""
 
 import sys
 

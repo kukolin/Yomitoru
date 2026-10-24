@@ -1,10 +1,12 @@
-"""Ícono opcional en la bandeja del sistema (pystray). Si pystray no está, la app funciona igual."""
+"""Optional system tray icon (pystray). Without pystray the app still works."""
 
 from __future__ import annotations
 
 from typing import Callable
 
 from PIL import Image, ImageDraw, ImageFont
+
+from . import APP_NAME
 
 
 def make_icon_image(size: int = 64) -> Image.Image:
@@ -23,18 +25,21 @@ def make_icon_image(size: int = 64) -> Image.Image:
 
 
 class Tray:
-    def __init__(self, on_show: Callable[[], None], on_toggle: Callable[[], None],
-                 is_watching: Callable[[], bool], on_about: Callable[[], None], on_quit: Callable[[], None]):
+    def __init__(self, translate: Callable[[str], str], on_show: Callable[[], None],
+                 on_toggle: Callable[[], None], is_watching: Callable[[], bool],
+                 on_about: Callable[[], None], on_quit: Callable[[], None]):
         import pystray
 
+        # texts are functions: refresh() recomputes them when the language changes
         menu = pystray.Menu(
-            pystray.MenuItem("Mostrar", lambda: on_show(), default=True),
-            pystray.MenuItem("Vigilar portapapeles", lambda: on_toggle(), checked=lambda item: is_watching()),
-            pystray.MenuItem("Acerca de…", lambda: on_about()),
+            pystray.MenuItem(lambda item: translate("tray_show"), lambda: on_show(), default=True),
+            pystray.MenuItem(lambda item: translate("tray_listen"), lambda: on_toggle(),
+                             checked=lambda item: is_watching()),
+            pystray.MenuItem(lambda item: translate("about_btn"), lambda: on_about()),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Salir", lambda: on_quit()),
+            pystray.MenuItem(lambda item: translate("tray_quit"), lambda: on_quit()),
         )
-        self.icon = pystray.Icon("yomitoru", make_icon_image(), "Yomitoru 読み取る", menu)
+        self.icon = pystray.Icon("yomitoru", make_icon_image(), f"{APP_NAME} 読み取る", menu)
 
     def start(self) -> None:
         self.icon.run_detached()
@@ -51,5 +56,5 @@ def create_tray(**callbacks) -> Tray | None:
         tray = Tray(**callbacks)
         tray.start()
         return tray
-    except Exception:  # sin pystray o sin soporte de bandeja: seguir sin ícono
+    except Exception:  # no pystray or no tray support: carry on without an icon
         return None

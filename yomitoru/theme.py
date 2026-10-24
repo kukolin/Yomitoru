@@ -1,4 +1,4 @@
-"""Paletas claro/oscuro y su aplicación a ttk, menús y la barra de título de Windows."""
+"""Light/dark palettes applied to ttk, menus and the Windows title bar."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from tkinter import ttk
 @dataclass(frozen=True)
 class Theme:
     dark: bool
-    bg: str            # fondo de las ventanas
-    card: str          # fondo de las tarjetas, campos y listas
+    bg: str            # window background
+    card: str          # background of cards, fields and lists
     border: str
     fg: str
     muted: str
@@ -21,14 +21,20 @@ class Theme:
     button_hover: str
     button_pressed: str
     select: str
+    on_bg: str         # "Listening" indicator
+    on_fg: str
+    off_bg: str        # "Off" indicator
+    off_fg: str
 
 
 LIGHT = Theme(dark=False, bg="#f3f3f3", card="#ffffff", border="#d6d6d6", fg="#1b1b1b",
               muted="#6b6b6b", link="#1a6fd1", button="#fdfdfd", button_hover="#eaeaea",
-              button_pressed="#dcdcdc", select="#cce4f7")
+              button_pressed="#dcdcdc", select="#cce4f7",
+              on_bg="#dff3e4", on_fg="#1b7a3a", off_bg="#e6e6e6", off_fg="#6b6b6b")
 DARK = Theme(dark=True, bg="#1f1f1f", card="#2b2b2b", border="#404040", fg="#e6e6e6",
              muted="#9d9d9d", link="#6cb4ff", button="#2d2d2d", button_hover="#3a3a3a",
-             button_pressed="#454545", select="#2f4f73")
+             button_pressed="#454545", select="#2f4f73",
+             on_bg="#1d3a27", on_fg="#6fd08c", off_bg="#333333", off_fg="#9d9d9d")
 
 
 def get_theme(dark: bool) -> Theme:
@@ -36,7 +42,7 @@ def get_theme(dark: bool) -> Theme:
 
 
 def apply_ttk(style: ttk.Style, t: Theme, font, small_font, row_height: int) -> None:
-    # "clam" es el tema de ttk que respeta todos los colores (el nativo de Windows no)
+    # "clam" is the ttk theme that honors every color (the native Windows one does not)
     style.theme_use("clam")
     style.configure(".", background=t.bg, foreground=t.fg, bordercolor=t.border, lightcolor=t.bg,
                     darkcolor=t.bg, troughcolor=t.bg, fieldbackground=t.card, focuscolor=t.border,
@@ -45,7 +51,7 @@ def apply_ttk(style: ttk.Style, t: Theme, font, small_font, row_height: int) -> 
     style.configure("TLabel", background=t.bg, foreground=t.fg)
     style.configure("Muted.TLabel", foreground=t.muted, font=small_font)
     style.configure("TButton", background=t.button, foreground=t.fg, bordercolor=t.border,
-                    lightcolor=t.button, darkcolor=t.button, padding=(10, 3), relief="flat")
+                    lightcolor=t.button, darkcolor=t.button, padding=(8, 3), relief="flat")
     style.map("TButton",
               background=[("disabled", t.bg), ("pressed", t.button_pressed), ("active", t.button_hover)],
               foreground=[("disabled", t.muted)],
@@ -54,7 +60,8 @@ def apply_ttk(style: ttk.Style, t: Theme, font, small_font, row_height: int) -> 
               darkcolor=[("pressed", t.button_pressed), ("active", t.button_hover)])
     style.configure("Nav.TButton", padding=(6, 3), width=2)
     style.configure("TMenubutton", background=t.button, foreground=t.fg, bordercolor=t.border,
-                    lightcolor=t.button, darkcolor=t.button, arrowcolor=t.fg, padding=(10, 3), relief="flat")
+                    lightcolor=t.button, darkcolor=t.button, arrowcolor=t.fg, arrowsize=5, padding=(8, 3),
+                    relief="flat")
     style.map("TMenubutton", background=[("pressed", t.button_pressed), ("active", t.button_hover)],
               lightcolor=[("active", t.button_hover)], darkcolor=[("active", t.button_hover)])
     style.configure("TEntry", fieldbackground=t.card, foreground=t.fg, bordercolor=t.border,
@@ -77,13 +84,13 @@ def style_menu(menu: tk.Menu, t: Theme) -> None:
 
 
 def set_titlebar(window: tk.Misc, dark: bool) -> None:
-    """Barra de título oscura/clara en Windows 10 (20H1+) y 11."""
+    """Dark/light title bar on Windows 10 (20H1+) and 11."""
     try:
         window.update_idletasks()
         hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
         value = ctypes.c_int(1 if dark else 0)
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
-        # Windows no repinta el marco solo: SWP_FRAMECHANGED | NOMOVE | NOSIZE | NOZORDER | NOACTIVATE
+        # Windows does not repaint the frame by itself: SWP_FRAMECHANGED | NOMOVE | NOSIZE | NOZORDER | NOACTIVATE
         ctypes.windll.user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x20 | 0x2 | 0x1 | 0x4 | 0x10)
     except (AttributeError, OSError):
         pass

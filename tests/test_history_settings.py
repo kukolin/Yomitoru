@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from yomitoru.history import History, format_when
+from yomitoru.history import CAPTURE, SEARCH, History
 from yomitoru.settings import Settings
 
 T0 = datetime(2026, 10, 23, 18, 35)
@@ -16,7 +16,7 @@ def test_add_and_navigate():
     assert h.can_back() and not h.can_forward()
     assert h.back().text == "猫"
     assert h.back().text == "日本"
-    assert h.back() is None  # ya está en la primera
+    assert h.back() is None  # already at the first one
     assert h.forward().text == "猫"
     assert h.forward().text == "勉強"
     assert h.forward() is None
@@ -64,46 +64,52 @@ def test_persistence(tmp_path):
     h.add("猫", T0)
     again = History.load(path)
     assert [e.text for e in again.entries] == ["日本語", "猫"]
-    assert again.pos is None and again.back().text == "猫"  # ◀ lleva a la última
+    assert again.pos is None and again.back().text == "猫"  # ◀ goes to the latest
 
 
-def test_persist_off_and_corrupt_file(tmp_path):
+def test_corrupt_file(tmp_path):
     path = tmp_path / "history.json"
-    h = History.load(path)
-    h.persist = False
-    h.add("猫", T0)
-    assert not path.exists()
-    path.write_text("{no es json", encoding="utf-8")
+    path.write_text("{not json", encoding="utf-8")
     assert len(History.load(path)) == 0
 
 
-def test_format_when():
-    now = datetime(2026, 10, 23, 20, 0)
-    assert format_when(datetime(2026, 10, 23, 18, 35), now) == "hoy 18:35"
-    assert format_when(datetime(2026, 10, 22, 9, 5), now) == "ayer 09:05"
-    assert format_when(datetime(2026, 3, 1, 9, 5), now) == "01/03 09:05"
-    assert format_when(datetime(2025, 3, 1, 9, 5), now) == "01/03/2025 09:05"
+def test_source_is_saved(tmp_path):
+    path = tmp_path / "history.json"
+    h = History.load(path)
+    h.add("猫", T0)  # default: screenshot
+    h.add("日本", T0, source=SEARCH)
+    again = History.load(path)
+    assert [e.source for e in again.entries] == [CAPTURE, SEARCH]
+    # 0.2.0 histories (no "source") are read as screenshots
+    path.write_text('[{"text": "猫", "time": "2026-10-23T18:35:00"}]', encoding="utf-8")
+    assert History.load(path).entries[0].source == CAPTURE
 
 
 def test_settings_roundtrip(tmp_path):
     path = tmp_path / "settings.json"
-    s = Settings.load(path)  # primera vez: valores por defecto
-    assert s.watch_clipboard and s.save_history and not s.always_on_top
+    s = Settings.load(path)  # first run: defaults
+    assert s.watch_clipboard and s.bring_to_front and not s.always_on_top
     s.dark_mode = True
-    s.always_on_top = True
+    s.language = "ja"
     s.save(path)
     loaded = Settings.load(path)
-    assert loaded.dark_mode and loaded.always_on_top
+    assert loaded.dark_mode and loaded.language == "ja"
 
 
-def test_settings_ignores_unknown_and_corrupt(tmp_path):
+def test_settings_from_older_version_and_corrupt(tmp_path):
     path = tmp_path / "settings.json"
-    path.write_text(json.dumps({"dark_mode": True, "otra_cosa": 1}), encoding="utf-8")
-    assert Settings.load(path).dark_mode is True
+    # 0.2.0 had show_english and save_history, and no language
+    path.write_text(json.dumps({"dark_mode": True, "show_english": False, "save_history": False}),
+                    encoding="utf-8")
+    loaded = Settings.load(path)
+    assert loaded.dark_mode is True and not hasattr(loaded, "show_english")
+    path.write_text(json.dumps({"language": "xx", "always_on_top": "yes"}), encoding="utf-8")
+    loaded = Settings.load(path)
+    assert loaded.language != "xx" and loaded.always_on_top is False  # invalid values ignored
     path.write_text("roto", encoding="utf-8")
     assert Settings.load(path).watch_clipboard is True
 
 
-def test_every_setting_has_a_label():
-    from dataclasses import fields
-    assert {f.name for f in fields(Settings)} == set(Settings.LABELS)
+def test_every_toggle_is_a_bool_setting():
+    defaults = Settings()
+    assert all(isinstance(getattr(defaults, name), bool) for name in Settings.TOGGLES)

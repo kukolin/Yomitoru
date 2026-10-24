@@ -1,4 +1,4 @@
-"""Rutas de datos, compatibles con ejecución normal y con PyInstaller."""
+"""Data paths, for both normal runs and PyInstaller builds."""
 
 import os
 import sys
@@ -18,13 +18,13 @@ def data_dir() -> Path:
 
 
 def config_dir() -> Path:
-    """Carpeta del usuario para opciones e historial (%APPDATA%\\Yomitoru)."""
+    """User folder for settings and history (%APPDATA%\\Yomitoru)."""
     base = os.environ.get("APPDATA")
     return Path(base) / "Yomitoru" if base else Path.home() / ".yomitoru"
 
 
 def find_db() -> Path | None:
-    """Busca la base: primero junto al .exe / proyecto, después dentro del bundle."""
+    """Find the database: first next to the .exe / project, then inside the bundle."""
     candidates = [data_dir() / DB_NAME]
     bundle = getattr(sys, "_MEIPASS", None)
     if bundle:

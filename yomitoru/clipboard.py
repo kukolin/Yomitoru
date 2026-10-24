@@ -1,4 +1,4 @@
-"""Detección de imágenes nuevas en el portapapeles."""
+"""Detection of new images in the clipboard."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from PIL import Image, ImageGrab
 
 
 def _sequence_number() -> int | None:
-    """Contador que Windows incrementa con cada cambio del portapapeles (consultarlo es gratis)."""
+    """Counter Windows increments on every clipboard change (free to query)."""
     try:
         return ctypes.windll.user32.GetClipboardSequenceNumber()
     except (AttributeError, OSError):
@@ -24,7 +24,7 @@ def image_hash(image: Image.Image) -> str:
 
 
 class ClipboardWatcher:
-    """Llamar a `poll()` periódicamente: devuelve la imagen solo si es nueva."""
+    """Call `poll()` periodically: it returns the image only when it is new."""
 
     def __init__(self, grab=ImageGrab.grabclipboard, sequence=_sequence_number):
         self._grab = grab
@@ -33,7 +33,7 @@ class ClipboardWatcher:
         self._last_hash: str | None = None
 
     def prime(self) -> None:
-        """Marca como vista la imagen actual (para no procesar una captura vieja al iniciar)."""
+        """Mark the current image as seen (so an old screenshot is not processed at startup)."""
         self._last_seq = None
         self.poll()
 
@@ -44,10 +44,10 @@ class ClipboardWatcher:
         self._last_seq = seq
         try:
             content = self._grab()
-        except OSError:  # portapapeles ocupado por otra aplicación: reintentar en el próximo ciclo
+        except OSError:  # clipboard busy in another application: retry next cycle
             self._last_seq = None
             return None
-        if not isinstance(content, Image.Image):  # texto, lista de archivos o vacío
+        if not isinstance(content, Image.Image):  # text, file list or empty
             return None
         digest = image_hash(content)
         if digest == self._last_hash:

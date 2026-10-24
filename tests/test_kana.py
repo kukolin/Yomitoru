@@ -10,7 +10,7 @@ def test_katakana_to_hiragana_basic():
 
 
 def test_katakana_to_hiragana_keeps_other_chars():
-    # ー, guiones, puntos de okurigana, hiragana y latín no cambian
+    # ー, dashes, okurigana dots, hiragana and Latin letters are unchanged
     assert katakana_to_hiragana("コーヒー") == "こーひー"
     assert katakana_to_hiragana("-び") == "-び"
     assert katakana_to_hiragana("ひ.く") == "ひ.く"

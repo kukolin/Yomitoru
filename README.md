@@ -1,229 +1,242 @@
 <div align="center">
 
-# Yomitoru 読み取る
+**English** · [Español](README.es.md) · [日本語](README.ja.md) · [中文](README.zh.md) · [한국어](README.ko.md) · [Português](README.pt.md) · [Français](README.fr.md) · [Deutsch](README.de.md)
 
-**Capturá un kanji de la pantalla y mirá al instante cómo se lee y qué significa.**
+# Yomitoru Kanji Reader 読み取る
 
-App de escritorio para Windows 10/11 · funciona offline · gratis y de código abierto
+### Lightweight and fast kanji lookup for Windows
 
-[**⬇ Descargar Yomitoru.exe**](https://github.com/kukolin/Yomitoru/releases/latest) ·
-[Cómo se usa](#cómo-se-usa) ·
-[Preguntas frecuentes](#preguntas-frecuentes) ·
-[Cómo funciona](#cómo-funciona-por-dentro)
+Screenshot any kanji with **Win+Shift+S** and instantly see its readings and meaning.<br>
+One small .exe · no installer · works offline · free and open source
 
-<img src="docs/screenshot.png" alt="Yomitoru en modo claro mostrando los kanji 猫 y 好" width="380">
-<img src="docs/screenshot-dark.png" alt="Yomitoru en modo oscuro" width="380">
+[**⬇ Download yomitoru-kanji-reader.exe**](https://github.com/kukolin/yomitoru-kanji-reader/releases/latest) ·
+[How to use](#how-to-use) ·
+[FAQ](#faq) ·
+[How it works](#how-it-works)
+
+<img src="docs/screenshot.png" alt="Yomitoru Kanji Reader showing the kanji 猫 and 好" width="380">
+<img src="docs/screenshot-dark.png" alt="Yomitoru Kanji Reader in dark mode" width="380">
 
 </div>
 
 ---
 
-## ¿Qué hace?
+## Lightweight and fast
 
-*Yomitoru* (読み取る) significa «leer, captar» en japonés. Estás leyendo algo en japonés (un manga, una página web, un juego, un video con subtítulos) y aparece un kanji que no conocés. En vez de dibujarlo en un buscador por trazos:
-
-1. Presionás **Win+Shift+S** y lo seleccionás con el mouse.
-2. Yomitoru detecta la captura, reconoce el texto y se abre al frente.
-
-Por cada kanji reconocido te muestra:
+*Yomitoru* (読み取る) means "to read, to take in" in Japanese. Yomitoru Kanji Reader is built to stay out of your way while you read Japanese: a manga, a website, a game or subtitles. When an unknown kanji shows up, you don't draw it in a stroke search. You screenshot it, and the answer is there before you look back.
 
 | | |
 | --- | --- |
-| **El kanji** | en grande, para ver bien los trazos |
-| **On'yomi** | la lectura de origen chino, en hiragana (にち、じつ) |
-| **Kun'yomi** | la lectura japonesa, en hiragana (ひ、-び、-か) |
-| **Significado** | en español cuando el diccionario lo tiene (≈2.500 kanji), si no en inglés |
-| **Datos extra** | cantidad de trazos, nivel JLPT y grado escolar japonés |
-| **jisho.org** | un link a la ficha completa del kanji |
+| **Fast** | About **0.1 s** from screenshot to result. Recognition itself takes ~30 ms. |
+| **Light** | A single **20 MB** .exe. No installer, no runtime to install, ~60–80 MB of RAM while running. |
+| **Offline** | Uses the OCR built into Windows and a bundled dictionary. Nothing is sent anywhere; only the jisho.org links need internet. |
+| **Quiet** | Waits in the system tray. It only checks a clipboard counter twice a second, so it uses practically no CPU. |
 
-Si capturaste una palabra o una frase, además aparece un link para buscarla completa en jisho.org. Y si el reconocimiento se equivoca, el texto se puede **corregir a mano** y volver a buscar.
+*Measured on a regular Windows 11 laptop.*
 
-Cada búsqueda queda en el **historial**, así que podés volver a un kanji de hace un rato con las flechas ◀ ▶. Y tiene **modo oscuro**.
+## What it shows
 
-**Todo funciona sin internet**: el reconocimiento de texto usa el OCR que ya trae Windows y el diccionario viene incluido. Solo los links a jisho.org necesitan conexión.
-
-## Instalación
-
-### 1. Descargá el programa
-
-Entrá a [**Releases**](https://github.com/kukolin/Yomitoru/releases/latest) y bajá **`Yomitoru.exe`**. No se instala: es un único archivo portable. Guardalo en la carpeta que quieras (por ejemplo `Documentos\Yomitoru`) y abrilo con doble clic.
-
-> **«Windows protegió tu PC»**: como el ejecutable no está firmado digitalmente (los certificados son pagos), Windows SmartScreen puede mostrar este aviso la primera vez. Hacé clic en **Más información → Ejecutar de todas formas**. Si preferís no confiar en un .exe, podés [correrlo desde el código fuente](#desde-el-código-fuente).
-
-### 2. Activá el OCR japonés de Windows (una sola vez)
-
-Yomitoru usa el reconocimiento de texto que trae Windows, pero el de japonés hay que agregarlo. Si no está, la app te avisa al abrirse.
-
-1. Abrí **Configuración → Hora e idioma → Idioma y región**.
-2. En «Idiomas preferidos», hacé clic en **Agregar un idioma**.
-3. Buscá **Japonés** (日本語) y seleccionalo.
-4. Dejá marcada la opción **Reconocimiento óptico de caracteres (OCR)** (las demás son opcionales) e instalá.
-5. Reabrí Yomitoru.
-
-No hace falta cambiar el idioma de Windows ni el teclado: tu sistema sigue en español.
-
-### 3. (Opcional) Que se abra al iniciar Windows
-
-Presioná **Win+R**, escribí `shell:startup` y Enter. En la carpeta que se abre, creá un acceso directo a `Yomitoru.exe`.
-
-## Cómo se usa
-
-1. Abrí Yomitoru. Aparece un ícono rojo **読** en la bandeja del sistema (al lado del reloj; puede estar dentro de la flechita ^).
-2. Cuando veas un kanji que no conocés, presioná **Win+Shift+S** y encerralo en un rectángulo.
-3. La ventana de Yomitoru aparece con el resultado.
-4. Presioná **Esc** para esconderla. Vuelve a aparecer sola con la próxima captura.
-
-**Consejos para que reconozca mejor:**
-
-- Encuadrá solo el texto, con un poco de margen. Una palabra o una línea funcionan mejor que un párrafo.
-- Texto horizontal. El texto vertical (縦書き, típico de manga) todavía no está soportado: capturá un carácter por vez.
-- Si se equivocó, corregí el texto en el campo de arriba y presioná **Enter** o **Buscar**.
-
-**Controles:**
+For every kanji in your screenshot:
 
 | | |
 | --- | --- |
-| **◀ ▶** (o **Alt+←** / **Alt+→**) | ir a la búsqueda anterior o a la siguiente del historial |
-| **Historial** (o **Ctrl+H**) | lista de todas las búsquedas con su fecha; doble clic para volver a abrir una |
-| **Opciones** | menú con todo lo que se puede encender y apagar (ver abajo) |
-| **Acerca de…** | versión, autor, licencias y links (también desde el ícono de la bandeja) |
-| **Esc** o la **X** de la ventana | la esconde; Yomitoru sigue en la bandeja |
-| Clic derecho en **読** → **Salir** | cierra Yomitoru del todo |
+| **The kanji** | large, so the strokes are easy to see |
+| **On'yomi** | the Chinese-derived reading, in hiragana (にち、じつ) |
+| **Kun'yomi** | the native Japanese reading, in hiragana (ひ、-び、-か) |
+| **Meaning** | in the app's language when the dictionary has it (English, Spanish, French or Portuguese), otherwise in English |
+| **Extra info** | stroke count, JLPT level and Japanese school grade |
+| **jisho.org** | a link to the kanji's full entry |
 
-**Opciones** (se recuerdan para la próxima vez):
+**Search on jisho.org** looks up whatever is typed in the text field: the whole word or sentence. If recognition gets something wrong, **fix the text** and search again.
 
-| Opción | Qué hace | De fábrica |
+Every lookup is kept in the **history**, so ◀ ▶ take you back to a kanji from a while ago. There is a **dark mode**, and the app speaks **10 languages**: English, español, 日本語, 中文, 한국어, français, português, Deutsch, italiano and русский.
+
+## Installation
+
+### 1. Download
+
+Go to [**Releases**](https://github.com/kukolin/yomitoru-kanji-reader/releases/latest) and download **`yomitoru-kanji-reader.exe`**. Nothing to install: put it in any folder (for example `Documents\Yomitoru Kanji Reader`) and double-click it.
+
+> **"Windows protected your PC"**: the .exe is not digitally signed (certificates are expensive), so Windows SmartScreen may show this warning the first time. Click **More info → Run anyway**. If you'd rather not trust an .exe, [run it from source](#from-source).
+
+### 2. Turn on Windows' Japanese OCR (once)
+
+Yomitoru Kanji Reader uses the text recognition built into Windows, but Japanese has to be added. If it's missing, the app tells you when it starts.
+
+1. Open **Settings → Time & language → Language & region**.
+2. Under "Preferred languages", click **Add a language**.
+3. Search for **Japanese** (日本語) and select it.
+4. Keep **Optical character recognition (OCR)** checked (the other options are optional) and install.
+5. Reopen Yomitoru Kanji Reader.
+
+You don't need to change your Windows display language or keyboard.
+
+### 3. (Optional) Start with Windows
+
+Press **Win+R**, type `shell:startup` and press Enter. In the folder that opens, create a shortcut to `yomitoru-kanji-reader.exe`.
+
+## How to use
+
+1. Open Yomitoru Kanji Reader. **● Listening** at the top left means it's watching for your screenshots. A red **読** icon also appears in the system tray (next to the clock, maybe under the ^ arrow).
+2. When you see a kanji you don't know, press **Win+Shift+S** and draw a rectangle around it.
+3. The Yomitoru Kanji Reader window pops up with the result.
+4. Press **Esc** to hide it. It comes back with the next screenshot.
+
+**Tips for better recognition**
+
+- Frame just the text, with a little margin. A word or a line works better than a paragraph.
+- Horizontal text. Vertical text (縦書き, common in manga) isn't supported yet: capture one character at a time.
+- If something is wrong, fix it in the text field and press **Enter** or **Search**.
+
+**Controls**
+
+| | |
+| --- | --- |
+| **● Listening / ○ Off** | click to pause or resume screenshot detection (also from the tray icon). When off, the app ignores whatever you copy |
+| **◀ ▶** (or **Alt+←** / **Alt+→**) | previous or next lookup in the history |
+| **History** (or **Ctrl+H**) | every lookup with its date; double-click to reopen one, and a button to clear it |
+| **Search on jisho.org** | searches jisho.org for whatever is typed in the text field |
+| **Copy** | select any reading or meaning and press **Ctrl+C** (or right-click → **Copy**); the icon under each kanji copies the kanji straight away |
+| **Options** | settings you can switch on and off, and the language (see below) |
+| **About…** | version, author, licenses and links (also from the tray icon) |
+| **Esc** or the window's **X** | hides the window; the app keeps running in the tray |
+| Right-click **読** → **Quit** | closes Yomitoru Kanji Reader completely |
+
+**Options** (remembered for next time)
+
+| Option | What it does | Default |
 | --- | --- | --- |
-| Vigilar portapapeles | detecta las capturas nuevas; apagalo para pausar (también desde la bandeja) | encendida |
-| Mostrar la ventana al capturar | trae la ventana al frente con cada captura | encendida |
-| Siempre visible | mantiene la ventana encima de las demás | apagada |
-| Modo oscuro | colores oscuros, incluida la barra de título | igual que Windows |
-| Mostrar también el significado en inglés | agrega el inglés debajo cuando hay traducción al español | encendida |
-| Recordar el historial al cerrar Yomitoru | guarda las búsquedas en disco; si lo apagás, el historial solo dura mientras la app está abierta y se borra el guardado | encendida |
+| Show the window on capture | brings the window to the front with every screenshot | on |
+| Always on top | keeps the window above other windows | off |
+| Dark mode | dark colors, including the title bar | same as Windows |
+| Language | language of the app and of the meanings | same as Windows |
 
-Las opciones y el historial (solo el texto, nunca las imágenes) se guardan en `%APPDATA%\Yomitoru`. Para empezar de cero, borrá esa carpeta.
+The status bar shows when the current lookup happened: **Captured: today 19:42** for a screenshot, or **Searched: today 19:42** if you typed it.
 
-## Preguntas frecuentes
+Settings and history (text only, never images) are stored in `%APPDATA%\Yomitoru`. Delete that folder to start fresh.
 
-**¿Necesita internet?**
-No. Solo para abrir los links a jisho.org.
+## FAQ
 
-**¿Guarda mis capturas o las manda a algún lado?**
-No. Las imágenes se procesan en memoria, en tu PC, y no se guardan ni se envían a ningún servidor. El historial guarda solo el texto reconocido y la fecha, en tu PC (`%APPDATA%\Yomitoru\history.json`), y lo podés borrar desde **Historial → Borrar historial…** o dejar de guardarlo desde **Opciones**.
+**Does it need internet?**
+No. Only to open the jisho.org links.
 
-**No reconoce 一, 二 o 三.**
-Es una limitación del OCR de Windows: los kanji formados solo por rayas horizontales no los detecta como texto. Escribilos a mano en el campo de texto.
+**Does it store my screenshots or send them anywhere?**
+No. Images are processed in memory on your PC and are never saved or uploaded. The history keeps only the recognized text and the date, on your PC (`%APPDATA%\Yomitoru\history.json`), and you can clear it any time from **History → Clear history…**.
 
-**Reconoce mal un carácter.**
-Pasa sobre todo con capturas muy chicas o tipografías muy finas. Probá hacer zoom en la página antes de capturar, o corregí el texto a mano. Si te pasa seguido, abrí un [issue](https://github.com/kukolin/Yomitoru/issues) con la captura.
+**It doesn't recognize 一, 二 or 三.**
+That's a limitation of the Windows OCR: kanji made only of horizontal strokes aren't detected as text. Type them in the text field.
 
-**Saqué una captura y no pasó nada.**
-- Fijate que **Vigilar portapapeles** esté activado.
-- Si capturás exactamente la misma imagen dos veces seguidas, la segunda se ignora.
-- Si Win+Shift+S directamente no abre el recorte, puede que la herramienta Recortes de Windows se haya colgado: abrí el Administrador de tareas (Ctrl+Shift+Esc), finalizá todos los procesos «Recortes» y probá de nuevo. Si se repite, en Configuración → Aplicaciones → Aplicaciones instaladas → Recortes → Opciones avanzadas, usá **Reparar**.
+**It misreads a character.**
+Mostly with very small screenshots or very thin fonts. Zoom in before capturing, or fix the text by hand. If it happens a lot, open an [issue](https://github.com/kukolin/yomitoru-kanji-reader/issues) with the screenshot.
 
-**Dice que ya está abierto.**
-Yomitoru solo permite una instancia. Buscá el ícono 読 en la bandeja del sistema.
+**I took a screenshot and nothing happened.**
+- Check that the top left says **● Listening** and not **○ Off** (one click switches it).
+- Capturing the exact same image twice in a row: the second one is ignored.
+- If Win+Shift+S doesn't open the snipping overlay at all, Windows' Snipping Tool may be stuck: open Task Manager (Ctrl+Shift+Esc), end every "Snipping Tool" process and try again. If it keeps happening, use **Repair** in Settings → Apps → Installed apps → Snipping Tool → Advanced options.
 
-**¿Por qué el significado aparece en inglés?**
-El diccionario KANJIDIC2 tiene traducciones al español para unos 2.500 kanji (entre ellos los más comunes). Para el resto se muestra el inglés.
+**It says it's already running.**
+Only one instance is allowed. Look for the 読 icon in the system tray.
 
-**¿Qué es «JLPT (antiguo)»?**
-KANJIDIC2 indica el nivel del examen JLPT según la escala anterior a 2010, de 4 (básico) a 1 (avanzado). Aproximadamente: 4 ≈ N5, 3 ≈ N4, 2 ≈ N3/N2, 1 ≈ N1.
+**Why is the meaning in English?**
+KANJIDIC2 has English meanings for about 10,400 kanji, plus Spanish (~2,500), French (~2,100) and Portuguese (~1,900), including the most common ones. When a kanji has no translation to your language, or the app is set to a language KANJIDIC2 doesn't include (Japanese, Chinese, Korean, German, Italian or Russian), the English meaning is shown with a short note.
 
-## Desde el código fuente
+**What is "JLPT (old)"?**
+KANJIDIC2 uses the pre-2010 JLPT scale, from 4 (beginner) to 1 (advanced). Roughly: 4 ≈ N5, 3 ≈ N4, 2 ≈ N3/N2, 1 ≈ N1.
 
-Necesitás **Python 3.11 o superior**.
+## From source
+
+You need **Python 3.11 or newer**.
 
 ```bat
-git clone https://github.com/kukolin/Yomitoru.git
-cd Yomitoru
+git clone https://github.com/kukolin/yomitoru-kanji-reader.git
+cd yomitoru-kanji-reader
 pip install -r requirements.txt
 python -m yomitoru.setup_dict
 python -m yomitoru
 ```
 
-`setup_dict` descarga KANJIDIC2 (≈1,5 MB) una sola vez y lo convierte en `data/kanjidic2.sqlite` (si te olvidás, la app ofrece hacerlo al abrirse). Después podés abrirla con doble clic en `Yomitoru.bat`, que la lanza sin consola.
+`setup_dict` downloads KANJIDIC2 (~1.5 MB) once and converts it into `data/kanjidic2.sqlite` (if you forget, the app offers to do it on startup). Afterwards you can double-click `yomitoru-kanji-reader.bat`, which starts it without a console.
 
-Opciones de línea de comandos:
+Command-line options:
 
-| Opción | |
+| Option | |
 | --- | --- |
-| `--interval 500` | milisegundos entre revisiones del portapapeles |
-| `--no-tray` | sin ícono en la bandeja (cerrar la ventana cierra la app) |
-| `--ocr manga` | usar manga-ocr en lugar del OCR de Windows (ver abajo) |
+| `--interval 500` | milliseconds between clipboard checks |
+| `--no-tray` | no tray icon (closing the window quits the app) |
+| `--ocr manga` | use manga-ocr instead of the Windows OCR (see below) |
 
-## Cómo funciona por dentro
+## How it works
 
 ```
- Win+Shift+S ──► portapapeles ──► ClipboardWatcher ──► OCR ──► diccionario ──► ventana
-                                  (cada 500 ms)        (hilo     (SQLite)
-                                                       aparte)
+ Win+Shift+S ──► clipboard ──► ClipboardWatcher ──► OCR ──► dictionary ──► window
+                               (every 500 ms)       (worker   (SQLite)
+                                                     thread)
 ```
 
-| Módulo | Qué hace |
+| Module | What it does |
 | --- | --- |
-| [`clipboard.py`](yomitoru/clipboard.py) | Cada 500 ms consulta el contador de cambios del portapapeles de Windows (`GetClipboardSequenceNumber`, prácticamente gratis). Solo cuando cambia lee la imagen con Pillow, y la procesa solo si su hash es distinto del de la anterior. |
-| [`ocr/`](yomitoru/ocr/) | Interfaz `OcrEngine.recognize(imagen) -> str`, con dos motores: el de Windows (por defecto) y manga-ocr. |
-| [`dictionary.py`](yomitoru/dictionary.py) | Parsea el XML de KANJIDIC2, lo guarda en SQLite y hace las consultas. El on'yomi se guarda ya convertido de katakana a hiragana. |
-| [`kana.py`](yomitoru/kana.py) | Conversión katakana → hiragana y detección de kanji (rangos Unicode CJK). |
-| [`lookup.py`](yomitoru/lookup.py) | Del texto reconocido a la lista de kanji (sin repetir, ignorando kana y signos) y los links a jisho.org. |
-| [`history.py`](yomitoru/history.py) | Historial cronológico (hasta 500 búsquedas) con un cursor para ◀ ▶, guardado en JSON. |
-| [`settings.py`](yomitoru/settings.py) | Las opciones del menú, guardadas en JSON. |
-| [`theme.py`](yomitoru/theme.py) | Paletas clara y oscura aplicadas a ttk, a los menús y a la barra de título de Windows. |
-| [`ui.py`](yomitoru/ui.py), [`tray.py`](yomitoru/tray.py), [`app.py`](yomitoru/app.py) | Ventanas en Tkinter (principal, historial, «Acerca de…»), ícono de bandeja (pystray) y la orquestación. El OCR corre en un hilo aparte para que la ventana no se congele. |
+| [`clipboard.py`](yomitoru/clipboard.py) | Every 500 ms it reads the Windows clipboard change counter (`GetClipboardSequenceNumber`, practically free). Only when it changes does it read the image with Pillow, and it processes it only if its hash is new. |
+| [`ocr/`](yomitoru/ocr/) | `OcrEngine.recognize(image) -> str` interface with two engines: Windows (default) and manga-ocr. |
+| [`dictionary.py`](yomitoru/dictionary.py) | Parses the KANJIDIC2 XML, stores it in SQLite and runs the lookups. On'yomi is stored already converted from katakana to hiragana; meanings in English, Spanish, French and Portuguese. |
+| [`kana.py`](yomitoru/kana.py) | Katakana → hiragana conversion and kanji detection (CJK Unicode ranges). |
+| [`lookup.py`](yomitoru/lookup.py) | From recognized text to the list of kanji (no repeats, ignoring kana and symbols) and the jisho.org links. |
+| [`history.py`](yomitoru/history.py) | Chronological history (up to 500 lookups) with a cursor for ◀ ▶, saved as JSON. |
+| [`settings.py`](yomitoru/settings.py) | Options menu settings, saved as JSON. |
+| [`i18n.py`](yomitoru/i18n.py) | UI texts in 10 languages, plus localized dates ("today 19:42"). To add a language, add its dictionary of texts; a test flags anything missing. |
+| [`theme.py`](yomitoru/theme.py) | Light and dark palettes applied to ttk, menus and the Windows title bar. |
+| [`ui.py`](yomitoru/ui.py), [`tray.py`](yomitoru/tray.py), [`app.py`](yomitoru/app.py) | Tkinter windows (main, history, About), tray icon (pystray) and orchestration. OCR runs on a worker thread so the window never freezes. |
 
-### El truco del OCR
+### The OCR trick
 
-El OCR de Windows (`Windows.Media.Ocr`, vía [pywinrt](https://github.com/pywinrt/pywinrt)) es rápido y no necesita descargar nada, pero tiene dos debilidades: es muy sensible al tamaño del texto y casi nunca reconoce un kanji suelto. Simplemente agrandar la imagen no alcanza, así que Yomitoru prueba varias versiones de cada captura y vota:
+The Windows OCR (`Windows.Media.Ocr`, through [pywinrt](https://github.com/pywinrt/pywinrt)) is fast and needs no download, but it has two weaknesses: it's very sensitive to text size, and it almost never recognizes a single kanji. Simply scaling the image up isn't enough, so Yomitoru Kanji Reader tries several versions of every screenshot and votes:
 
-1. **Normaliza**: escala de grises, texto oscuro sobre fondo claro (así funciona también con temas oscuros) y recorte al contenido.
-2. **Estima la altura de línea** con el perfil horizontal de tinta y escala para que cada línea quede en 20, 26, 32 y 40 px, en versión normal y engrosada (las tipografías finas fallan más).
-3. **Repite el carácter**: si la captura parece un solo carácter, también prueba con `日日日`. El motor reconoce perfectamente una «palabra» de tres kanji iguales aunque no reconozca uno solo.
-4. **Descarta resultados imposibles** (por ejemplo, más líneas de las que tiene la imagen: a veces el motor parte 語 en dos renglones) y se queda con el más votado.
+1. **Normalize**: grayscale, dark text on a light background (so dark themes work too), cropped to the content.
+2. **Estimate the line height** from the horizontal ink profile and scale so each line is 20, 26, 32 and 40 px tall, both normal and bolder (thin fonts fail more often).
+3. **Repeat the character**: if the screenshot looks like a single character, also try `日日日`. The engine reads a three-kanji "word" just fine even when it can't read one kanji alone.
+4. **Drop impossible results** (for example, more lines than the image has: the engine sometimes splits 語 into two rows) and keep the most voted one.
 
-Todo junto tarda unos 40 ms por captura.
+All of that takes about 30 ms per screenshot.
 
-### Usar manga-ocr
+### Using manga-ocr
 
-Si necesitás más precisión (sobre todo con manga), hay un segundo motor ya conectado:
+If you need more accuracy (especially with manga), a second engine is already wired in:
 
 ```bat
 pip install manga-ocr
 python -m yomitoru --ocr manga
 ```
 
-[manga-ocr](https://github.com/kha-white/manga-ocr) es mucho más preciso con japonés y entiende texto vertical, pero instala PyTorch y descarga un modelo de ≈450 MB la primera vez (después funciona offline). No está incluido en el .exe.
+[manga-ocr](https://github.com/kha-white/manga-ocr) is much more accurate with Japanese and handles vertical text, but it installs PyTorch and downloads a ~450 MB model the first time (it works offline afterwards). It isn't included in the .exe, which is what keeps the .exe lightweight.
 
-Para agregar otro motor, creá una subclase de `OcrEngine` en `yomitoru/ocr/` y registrala en `create_engine`.
+To add another engine, subclass `OcrEngine` in `yomitoru/ocr/` and register it in `create_engine`.
 
-## Desarrollo
+## Development
 
 ```bat
 pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-Los tests cubren el parseo del diccionario (日 → にち/じつ, ひ/か), la conversión katakana→hiragana, el OCR sobre imágenes generadas con Pillow, el historial y las opciones, y el flujo completo con la ventana real (flechas, ventana de historial, modo oscuro). Para probar también con el portapapeles de Windows (lo sobrescribe), definí `YOMITORU_E2E_CLIPBOARD=1` antes de correr pytest.
+The tests cover dictionary parsing (日 → にち/じつ, ひ/か), katakana→hiragana conversion, OCR on images rendered with Pillow, history and settings, that no translation is missing, and the full flow with the real window (arrows, history, dark mode and live language switching). To also test with the real Windows clipboard (it gets overwritten), set `YOMITORU_E2E_CLIPBOARD=1` before running pytest.
 
-Para generar el ejecutable:
+To build the executable:
 
 ```bat
 build_exe.bat
 ```
 
-Crea `dist\Yomitoru.exe` (≈20 MB, un solo archivo, con el diccionario incluido) usando PyInstaller.
+It creates `dist\yomitoru-kanji-reader.exe` (~20 MB, a single file with the dictionary inside) with PyInstaller.
 
-## Autor
+## Author
 
-Creado por **Lucas Anezin** ([@kukolin](https://github.com/kukolin)).
+Created by **Lucas Anezin** ([@kukolin](https://github.com/kukolin)).
 
-¿Encontraste un error o tenés una idea? Abrí un [issue](https://github.com/kukolin/Yomitoru/issues).
+Found a bug or have an idea? Open an [issue](https://github.com/kukolin/yomitoru-kanji-reader/issues).
 
-## Licencias y créditos
+## License and credits
 
-- **Código**: [MIT](LICENSE) © 2026 Lucas Anezin.
-- **Diccionario**: este programa usa el archivo [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project), propiedad del **Electronic Dictionary Research and Development Group (EDRDG)**, y se usa de acuerdo con su [licencia](https://www.edrdg.org/edrdg/licence.html): **Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)**. La base `kanjidic2.sqlite` incluida en el ejecutable es una obra derivada y se distribuye bajo la misma licencia.
-- **OCR**: `Windows.Media.Ocr` de Microsoft, mediante [pywinrt](https://github.com/pywinrt/pywinrt).
-- **Links**: [Jisho.org](https://jisho.org), diccionario online de japonés que también usa datos del EDRDG.
-- Hecho con [Pillow](https://python-pillow.org), [pystray](https://github.com/moses-palmer/pystray) y Tkinter.
+- **Code**: [MIT](LICENSE) © 2026 Lucas Anezin.
+- **Dictionary**: this program uses the [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) file, which is the property of the **Electronic Dictionary Research and Development Group (EDRDG)**, and is used in conformance with the Group's [licence](https://www.edrdg.org/edrdg/licence.html): **Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)**. The `kanjidic2.sqlite` database bundled in the executable is a derivative work distributed under the same licence.
+- **OCR**: Microsoft's `Windows.Media.Ocr`, through [pywinrt](https://github.com/pywinrt/pywinrt).
+- **Links**: [Jisho.org](https://jisho.org), an online Japanese dictionary that also uses EDRDG data.
+- Built with [Pillow](https://python-pillow.org), [pystray](https://github.com/moses-palmer/pystray) and Tkinter.

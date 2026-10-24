@@ -5,7 +5,7 @@ import pytest
 from yomitoru.dictionary import KanjiDictionary, build_db, parse_kanjidic
 from yomitoru.paths import find_db
 
-# Fragmento real (recortado) del formato KANJIDIC2
+# Real (trimmed) excerpt of the KANJIDIC2 format
 SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <kanjidic2>
 <header><file_version>4</file_version><database_version>test</database_version>
@@ -49,11 +49,12 @@ def test_parse_sample():
     assert nichi.literal == "日"
     assert nichi.onyomi == ["にち", "じつ"]  # katakana -> hiragana
     assert {"ひ", "か"} <= _kun_clean(nichi.kunyomi)
-    assert nichi.meanings == ("es", ["día", "sol"])
-    assert nichi.meanings_en == ["day", "sun"]
+    assert nichi.meanings_for("es") == ("es", ["día", "sol"])
+    assert nichi.meanings_for("fr") == ("fr", ["jour"])
+    assert nichi.meanings_for("de") == ("en", ["day", "sun"])  # no German in KANJIDIC2 -> English
     assert (nichi.strokes, nichi.grade, nichi.jlpt, nichi.freq) == (4, 1, 4, 1)
-    # sin significado en español -> cae al inglés
-    assert entries[1].meanings == ("en", ["obstruction of breath"])
+    # no Spanish meaning -> falls back to English
+    assert entries[1].meanings_for("es") == ("en", ["obstruction of breath"])
 
 
 def test_build_and_lookup(tmp_path):
@@ -70,6 +71,17 @@ def test_build_and_lookup(tmp_path):
         d.close()
 
 
+def test_outdated_schema_is_detected(tmp_path):
+    import sqlite3
+    from yomitoru.dictionary import OutdatedDictionaryError
+    db = tmp_path / "old.sqlite"
+    with sqlite3.connect(db) as con:  # 0.1/0.2 format: no yomitoru_schema
+        con.executescript("CREATE TABLE kanji (literal TEXT); CREATE TABLE meta (key TEXT, value TEXT);")
+    con.close()
+    with pytest.raises(OutdatedDictionaryError):
+        KanjiDictionary(db)
+
+
 @pytest.fixture(scope="module")
 def real_dict():
     path = find_db()
@@ -78,6 +90,11 @@ def real_dict():
     d = KanjiDictionary(path)
     yield d
     d.close()
+
+
+def test_real_dictionary_languages(real_dict):
+    info = real_dict.lookup("日")
+    assert "día" in info.meanings["es"] and "jour" in info.meanings["fr"] and "dia" in info.meanings["pt"]
 
 
 @pytest.mark.parametrize("literal, on, kun, meaning", [
@@ -91,5 +108,5 @@ def test_real_dictionary(real_dict, literal, on, kun, meaning):
     assert info is not None
     assert on <= set(info.onyomi)
     assert kun <= _kun_clean(info.kunyomi)
-    assert meaning in info.meanings_en
+    assert meaning in info.meanings["en"]
     assert len(real_dict) > 13000

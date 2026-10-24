@@ -1,7 +1,7 @@
-"""Motor alternativo: manga-ocr (más preciso con texto japonés, pero pesado: PyTorch + ~450 MB de modelo).
+"""Alternative engine: manga-ocr (more accurate with Japanese text, but heavy: PyTorch + ~450 MB model).
 
-Instalar con:  pip install manga-ocr   (descarga el modelo la primera vez; después funciona offline)
-Usar con:      python -m yomitoru --ocr manga
+Install:  pip install manga-ocr   (downloads the model the first time; works offline afterwards)
+Use:      python -m yomitoru --ocr manga
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ class MangaOcrEngine(OcrEngine):
         try:
             from manga_ocr import MangaOcr
         except ImportError as e:
-            raise OcrUnavailableError("manga-ocr no está instalado. Ejecutá: pip install manga-ocr") from e
+            raise OcrUnavailableError("manga-ocr is not installed. Run: pip install manga-ocr") from e
         self._model = MangaOcr()
 
     def recognize(self, image: Image.Image) -> str:

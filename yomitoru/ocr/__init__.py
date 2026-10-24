@@ -1,7 +1,7 @@
-"""Interfaz de OCR intercambiable.
+"""Swappable OCR interface.
 
-Cada motor implementa `OcrEngine.recognize(image) -> str`. Para agregar otro motor,
-crear una subclase y registrarla en `create_engine`.
+Each engine implements `OcrEngine.recognize(image) -> str`. To add an engine,
+create a subclass and register it in `create_engine`.
 """
 
 from __future__ import annotations
@@ -12,7 +12,15 @@ from PIL import Image
 
 
 class OcrUnavailableError(RuntimeError):
-    """El motor no se puede usar (falta el idioma, una dependencia, etc.). El mensaje es para el usuario."""
+    """The engine cannot be used (missing language, dependency, etc.).
+
+    `code` identifies known causes so the UI can show translated help
+    ("language_missing": the Windows Japanese OCR is not installed).
+    """
+
+    def __init__(self, message: str, code: str | None = None):
+        super().__init__(message)
+        self.code = code
 
 
 class OcrEngine(ABC):
@@ -20,10 +28,10 @@ class OcrEngine(ABC):
 
     @abstractmethod
     def recognize(self, image: Image.Image) -> str:
-        """Devuelve el texto japonés reconocido (sin espacios entre caracteres)."""
+        """Return the recognized Japanese text (without spaces between characters)."""
 
     def check(self) -> None:
-        """Lanza OcrUnavailableError si el motor no está listo para usarse."""
+        """Raise OcrUnavailableError if the engine is not ready to be used."""
 
 
 def create_engine(name: str = "windows") -> OcrEngine:
@@ -33,4 +41,4 @@ def create_engine(name: str = "windows") -> OcrEngine:
     if name == "manga":
         from .manga import MangaOcrEngine
         return MangaOcrEngine()
-    raise ValueError(f"Motor de OCR desconocido: {name!r} (opciones: windows, manga)")
+    raise ValueError(f"Unknown OCR engine: {name!r} (options: windows, manga)")

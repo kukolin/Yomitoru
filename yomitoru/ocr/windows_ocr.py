@@ -1,14 +1,14 @@
-"""OCR nativo de Windows (Windows.Media.Ocr) vía pywinrt.
+"""Native Windows OCR (Windows.Media.Ocr) through pywinrt.
 
-El motor de Windows es muy sensible al tamaño absoluto del texto y casi nunca
-reconoce un kanji suelto. Por eso, en vez de un único "agrandar 2–3×":
-  1. se pasa a escala de grises, texto oscuro sobre fondo claro, recortado al contenido;
-  2. se escala para que la altura de línea quede en varios tamaños objetivo (~20–40 px);
-  3. cada tamaño se prueba también en "negrita" (las fuentes finas fallan más);
-  4. si parece un solo carácter, además se prueba repitiéndolo (日日日), lo que el
-     motor sí reconoce;
-  5. se descartan resultados con más líneas de las que tiene la imagen (el motor
-     a veces parte un kanji como 語 en dos "líneas") y se elige el más votado.
+The Windows engine is very sensitive to the absolute text size and almost never
+recognizes a standalone kanji. So instead of a single "scale up 2–3×":
+  1. convert to grayscale, dark text on a light background, cropped to the content;
+  2. scale so the line height lands on several target sizes (~20–40 px);
+  3. try every size in "bold" too (thin fonts fail more often);
+  4. if it looks like a single character, also try it repeated (日日日), which the
+     engine does recognize;
+  5. drop results with more lines than the image has (the engine sometimes splits a
+     kanji like 語 into two "lines") and pick the most voted result.
 """
 
 from __future__ import annotations
@@ -22,22 +22,12 @@ from PIL import Image, ImageFilter, ImageOps
 
 from . import OcrEngine, OcrUnavailableError
 
-INSTALL_HELP = (
-    "El OCR japonés de Windows no está instalado.\n\n"
-    "Para instalarlo:\n"
-    "  1. Abrí Configuración → Hora e idioma → Idioma y región.\n"
-    "  2. En «Idiomas preferidos», hacé clic en «Agregar un idioma».\n"
-    "  3. Buscá «Japonés» (日本語) y seleccionalo.\n"
-    "  4. Asegurate de que la opción «Reconocimiento óptico de caracteres (OCR)» "
-    "esté marcada (las demás son opcionales) e instalá.\n"
-    "  5. Reiniciá Yomitoru.\n\n"
-    "No hace falta cambiar el idioma de Windows."
-)
+LANGUAGE_MISSING = "Windows Japanese OCR is not installed (Settings > Time & language > Language)."
 
 TARGET_HEIGHTS = (20, 26, 32, 40)
 TILE_HEIGHTS = (20, 28, 40)
 TILE_COUNT = 3
-INK_THRESHOLD = 160  # tras autocontraste, más oscuro que esto es "tinta"
+INK_THRESHOLD = 160  # after autocontrast, darker than this is "ink"
 
 _CJK = "　-ヿ㐀-䶿一-鿿豈-﫿＀-￯"
 _SPACE_BETWEEN_CJK = re.compile(rf"(?<=[{_CJK}])\s+(?=[{_CJK}])")
@@ -45,12 +35,12 @@ _JAPANESE_CHAR = re.compile(rf"[{_CJK}]")
 
 
 def clean_text(text: str) -> str:
-    """El OCR de Windows separa cada carácter japonés con espacios: se quitan."""
+    """Windows OCR separates every Japanese character with spaces: remove them."""
     return _SPACE_BETWEEN_CJK.sub("", text).strip()
 
 
 def normalize(image: Image.Image) -> Image.Image:
-    """Escala de grises, texto oscuro sobre claro, recortado al contenido."""
+    """Grayscale, dark text on light, cropped to the content."""
     gray = ImageOps.autocontrast(ImageOps.grayscale(image))
     w, h = gray.width - 1, gray.height - 1
     corners = sorted(gray.getpixel(p) for p in ((0, 0), (w, 0), (0, h), (w, h)))
@@ -62,7 +52,7 @@ def normalize(image: Image.Image) -> Image.Image:
 
 
 def line_metrics(gray: Image.Image) -> tuple[int, int]:
-    """(altura de línea, cantidad de líneas) estimadas con el perfil horizontal de tinta."""
+    """(line height, number of lines) estimated from the horizontal ink profile."""
     data = gray.point(lambda v: 1 if v < INK_THRESHOLD else 0).tobytes()
     w = gray.width
     rows = [any(data[y * w:(y + 1) * w]) for y in range(gray.height)]
@@ -73,7 +63,7 @@ def line_metrics(gray: Image.Image) -> tuple[int, int]:
         elif not has_ink and start is not None:
             runs.append([start, y])
             start = None
-    # unir huecos chicos (trazos separados dentro de un mismo carácter)
+    # merge small gaps (separate strokes within the same character)
     merged: list[list[int]] = []
     for run in runs:
         if merged and run[0] - merged[-1][1] < 0.1 * gray.height + 2:
@@ -104,14 +94,14 @@ def _tiled(gray: Image.Image, count: int, gap: int, pad: int) -> Image.Image:
 
 
 def variants(image: Image.Image, max_dim: int = 10000) -> list[tuple[str, Image.Image, int]]:
-    """Imágenes a reconocer: (tipo, imagen, máximo de líneas aceptable).
+    """Images to recognize: (kind, image, maximum acceptable number of lines).
 
-    Tipo "line": la imagen escalada; "tile": el carácter repetido TILE_COUNT veces.
+    Kind "line": the scaled image; "tile": the character repeated TILE_COUNT times.
     """
     gray = normalize(image)
     lh, n_lines = line_metrics(gray)
-    # si la estimación sugiere varias líneas, probar también como una sola
-    # (los trazos de 三 o 二 se confunden con líneas)
+    # if the estimate suggests several lines, also try it as a single one
+    # (the strokes of 三 or 二 look like lines)
     heights = {lh, gray.height} if lh < 0.7 * gray.height else {gray.height}
     out: list[tuple[str, Image.Image, int]] = []
     for h in sorted(heights):
@@ -121,7 +111,7 @@ def variants(image: Image.Image, max_dim: int = 10000) -> list[tuple[str, Image.
             scaled = _scaled(gray, factor)
             out.append(("line", _pad(scaled, target // 2), max_lines))
             out.append(("line", _pad(scaled.filter(ImageFilter.MinFilter(3)), target // 2), max_lines))
-    # ¿un solo carácter? (aproximadamente cuadrado; si no lo es, _untile descarta el resultado)
+    # a single character? (roughly square; if not, _untile discards the result)
     if gray.width <= 1.5 * gray.height:
         for target in TILE_HEIGHTS:
             small = _scaled(gray, target / gray.height)
@@ -130,7 +120,7 @@ def variants(image: Image.Image, max_dim: int = 10000) -> list[tuple[str, Image.
 
 
 def _untile(text: str) -> str:
-    """'日日日' -> '日'. Si no es una repetición clara, descarta el resultado."""
+    """'日日日' -> '日'. If it is not a clear repetition, the result is discarded."""
     chars = [c for c in text if _JAPANESE_CHAR.match(c)]
     if len(chars) < 2:
         return ""
@@ -139,7 +129,7 @@ def _untile(text: str) -> str:
 
 
 def choose(results: list[str]) -> str:
-    """Elige el texto más votado; desempata por proporción de caracteres japoneses y largo."""
+    """Pick the most voted text; ties are broken by share of Japanese characters and length."""
     votes = Counter(r for r in results if r)
     if not votes:
         return ""
@@ -164,14 +154,14 @@ class WindowsOcr(OcrEngine):
             from winrt.windows.media.ocr import OcrEngine as WinOcrEngine
         except ImportError as e:  # pragma: no cover
             raise OcrUnavailableError(
-                f"Faltan los paquetes de pywinrt ({e.name}). Ejecutá: pip install -r requirements.txt"
+                f"Missing pywinrt packages ({e.name}). Run: pip install -r requirements.txt"
             ) from e
         lang = Language(self.language)
         if not WinOcrEngine.is_language_supported(lang):
-            raise OcrUnavailableError(INSTALL_HELP)
+            raise OcrUnavailableError(LANGUAGE_MISSING, code="language_missing")
         self._engine = WinOcrEngine.try_create_from_language(lang)
         if self._engine is None:
-            raise OcrUnavailableError(INSTALL_HELP)
+            raise OcrUnavailableError(LANGUAGE_MISSING, code="language_missing")
 
     def recognize(self, image: Image.Image) -> str:
         if self._engine is None:

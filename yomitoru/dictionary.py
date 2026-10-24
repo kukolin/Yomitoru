@@ -1,7 +1,7 @@
-"""KANJIDIC2: parseo del XML, construcción de la base SQLite y consultas.
+"""KANJIDIC2: XML parsing, SQLite database building and lookups.
 
 KANJIDIC2 © Electronic Dictionary Research and Development Group (EDRDG),
-licencia CC BY-SA 4.0 — https://www.edrdg.org/edrdg/licence.html
+licence CC BY-SA 4.0 — https://www.edrdg.org/edrdg/licence.html
 """
 
 from __future__ import annotations
@@ -15,25 +15,31 @@ from typing import IO, Iterable, Iterator
 
 from .kana import katakana_to_hiragana
 
+# meaning languages in KANJIDIC2; English is used when the requested one is missing
+MEANING_LANGS = ("en", "es", "fr", "pt")
+SCHEMA_VERSION = "2"
+
+
+class OutdatedDictionaryError(RuntimeError):
+    """The database was built by an older version of the app and must be rebuilt."""
+
 
 @dataclass
 class KanjiInfo:
     literal: str
-    onyomi: list[str] = field(default_factory=list)  # ya convertido a hiragana
+    onyomi: list[str] = field(default_factory=list)  # already converted to hiragana
     kunyomi: list[str] = field(default_factory=list)
-    meanings_es: list[str] = field(default_factory=list)
-    meanings_en: list[str] = field(default_factory=list)
+    meanings: dict[str, list[str]] = field(default_factory=dict)  # language -> meanings
     strokes: int | None = None
     grade: int | None = None
     jlpt: int | None = None
     freq: int | None = None
 
-    @property
-    def meanings(self) -> tuple[str, list[str]]:
-        """(idioma, significados): español si existe, si no inglés."""
-        if self.meanings_es:
-            return "es", self.meanings_es
-        return "en", self.meanings_en
+    def meanings_for(self, lang: str) -> tuple[str, list[str]]:
+        """(language, meanings) in `lang` if KANJIDIC2 has them; otherwise in English."""
+        if self.meanings.get(lang):
+            return lang, self.meanings[lang]
+        return "en", self.meanings.get("en", [])
 
 
 def _int(text: str | None) -> int | None:
@@ -60,15 +66,13 @@ def parse_character(elem: ET.Element) -> KanjiInfo:
                 info.kunyomi.append(text)
         for meaning in rm.iterfind("meaning"):
             lang = meaning.get("m_lang", "en")
-            if lang == "en":
-                info.meanings_en.append(meaning.text or "")
-            elif lang == "es":
-                info.meanings_es.append(meaning.text or "")
+            if lang in MEANING_LANGS:
+                info.meanings.setdefault(lang, []).append(meaning.text or "")
     return info
 
 
 def parse_kanjidic(source: str | Path | IO[bytes]) -> tuple[dict[str, str], Iterator[KanjiInfo]]:
-    """Devuelve (metadatos del header, iterador de KanjiInfo). Usa iterparse para no cargar todo."""
+    """Return (header metadata, KanjiInfo iterator). Uses iterparse to avoid loading everything."""
     header: dict[str, str] = {}
 
     def entries() -> Iterator[KanjiInfo]:
@@ -85,7 +89,7 @@ def parse_kanjidic(source: str | Path | IO[bytes]) -> tuple[dict[str, str], Iter
 SCHEMA = """
 CREATE TABLE kanji (
     literal TEXT PRIMARY KEY,
-    onyomi TEXT, kunyomi TEXT, meanings_es TEXT, meanings_en TEXT,
+    onyomi TEXT, kunyomi TEXT, meanings TEXT,
     strokes INTEGER, grade INTEGER, jlpt INTEGER, freq INTEGER
 );
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
@@ -93,7 +97,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
 
 
 def build_db(entries: Iterable[KanjiInfo], db_path: Path, header: dict[str, str] | None = None) -> int:
-    """Escribe la base SQLite (reemplazándola). Devuelve la cantidad de kanji."""
+    """Write the SQLite database (replacing it). Returns the number of kanji."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = db_path.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)
@@ -103,13 +107,14 @@ def build_db(entries: Iterable[KanjiInfo], db_path: Path, header: dict[str, str]
         count = 0
         for k in entries:
             con.execute(
-                "INSERT OR REPLACE INTO kanji VALUES (?,?,?,?,?,?,?,?,?)",
-                (k.literal, dump(k.onyomi), dump(k.kunyomi), dump(k.meanings_es),
-                 dump(k.meanings_en), k.strokes, k.grade, k.jlpt, k.freq),
+                "INSERT OR REPLACE INTO kanji VALUES (?,?,?,?,?,?,?,?)",
+                (k.literal, dump(k.onyomi), dump(k.kunyomi), dump(k.meanings),
+                 k.strokes, k.grade, k.jlpt, k.freq),
             )
             count += 1
-        # header se completa durante la iteración, por eso se guarda al final
-        con.executemany("INSERT INTO meta VALUES (?,?)", list((header or {}).items()))
+        # the header is filled in during iteration, so it is saved at the end
+        meta = {**(header or {}), "yomitoru_schema": SCHEMA_VERSION}
+        con.executemany("INSERT INTO meta VALUES (?,?)", list(meta.items()))
     con.close()
     tmp.replace(db_path)
     return count
@@ -117,19 +122,24 @@ def build_db(entries: Iterable[KanjiInfo], db_path: Path, header: dict[str, str]
 
 class KanjiDictionary:
     def __init__(self, db_path: Path):
-        # check_same_thread=False: solo lecturas, se consulta desde el hilo de la UI y del OCR
+        # check_same_thread=False: read-only, queried from both the UI and OCR threads
         self._con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, check_same_thread=False)
+        if self.meta().get("yomitoru_schema") != SCHEMA_VERSION:
+            self._con.close()
+            raise OutdatedDictionaryError(str(db_path))
 
     def lookup(self, literal: str) -> KanjiInfo | None:
         row = self._con.execute("SELECT * FROM kanji WHERE literal = ?", (literal,)).fetchone()
         if row is None:
             return None
-        lit, on, kun, es, en, strokes, grade, jlpt, freq = row
-        return KanjiInfo(lit, json.loads(on), json.loads(kun), json.loads(es), json.loads(en),
-                         strokes, grade, jlpt, freq)
+        lit, on, kun, meanings, strokes, grade, jlpt, freq = row
+        return KanjiInfo(lit, json.loads(on), json.loads(kun), json.loads(meanings), strokes, grade, jlpt, freq)
 
     def meta(self) -> dict[str, str]:
-        return dict(self._con.execute("SELECT key, value FROM meta").fetchall())
+        try:
+            return dict(self._con.execute("SELECT key, value FROM meta").fetchall())
+        except sqlite3.DatabaseError:
+            return {}
 
     def __len__(self) -> int:
         return self._con.execute("SELECT COUNT(*) FROM kanji").fetchone()[0]

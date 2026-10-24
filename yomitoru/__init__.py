@@ -1,6 +1,7 @@
-"""Yomitoru (読み取る): OCR de kanji desde el portapapeles con KANJIDIC2."""
+"""Yomitoru Kanji Reader (読み取る): lightweight, fast kanji lookup from screenshots, with KANJIDIC2."""
 
-__version__ = "0.2.0"
-APP_NAME = "Yomitoru"
+__version__ = "0.3.0"
+APP_NAME = "Yomitoru Kanji Reader"
+EXE_NAME = "yomitoru-kanji-reader"
 AUTHOR = "Lucas Anezin"
-REPO_URL = "https://github.com/kukolin/Yomitoru"
+REPO_URL = "https://github.com/kukolin/yomitoru-kanji-reader"

@@ -1,4 +1,4 @@
-"""Del texto reconocido a lo que muestra la ventana (sin dependencias de UI)."""
+"""From recognized text to what the window shows (no UI dependencies)."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def jisho_word_url(text: str) -> str:
 @dataclass
 class KanjiEntry:
     literal: str
-    info: KanjiInfo | None  # None si no está en KANJIDIC2
+    info: KanjiInfo | None  # None if not in KANJIDIC2
     url: str
 
 
@@ -28,7 +28,7 @@ class KanjiEntry:
 class LookupResult:
     text: str
     kanji: list[KanjiEntry]
-    word_url: str | None  # solo si hay más de un carácter
+    word_url: str | None  # only when there is more than one character
 
 
 def lookup_text(text: str, dictionary: KanjiDictionary) -> LookupResult:

@@ -48,16 +48,16 @@ def test_watcher_only_new_images():
     w = ClipboardWatcher(grab=lambda: cb.content, sequence=lambda: cb.seq)
     cb.set(Image.new("RGB", (10, 10), "red"))
     w.prime()
-    assert w.poll() is None  # la imagen que ya estaba al iniciar se ignora
+    assert w.poll() is None  # the image already there at startup is ignored
 
     blue = Image.new("RGB", (10, 10), "blue")
     cb.set(blue)
     assert w.poll() is blue
-    assert w.poll() is None  # sin cambios
+    assert w.poll() is None  # no changes
 
-    cb.set("texto copiado")
+    cb.set("copied text")
     assert w.poll() is None
-    cb.set(Image.new("RGB", (10, 10), "blue"))  # misma imagen otra vez: mismo hash
+    cb.set(Image.new("RGB", (10, 10), "blue"))  # same image again: same hash
     assert w.poll() is None
     cb.set(Image.new("RGB", (10, 10), "green"))
     assert w.poll() is not None

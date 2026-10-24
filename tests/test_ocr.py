@@ -1,4 +1,4 @@
-"""OCR con imágenes generadas con Pillow (se saltea si el OCR japonés de Windows no está)."""
+"""OCR on images rendered with Pillow (skipped if the Windows Japanese OCR is not installed)."""
 
 import threading
 from pathlib import Path
@@ -15,7 +15,7 @@ FONTS = [Path(r"C:\Windows\Fonts") / n for n in ("YuGothM.ttc", "meiryo.ttc", "m
 def render(text: str, size: int = 48, fg="black", bg="white") -> Image.Image:
     font_path = next((f for f in FONTS if f.exists()), None)
     if font_path is None:
-        pytest.skip("No hay fuente japonesa instalada")
+        pytest.skip("No Japanese font installed")
     font = ImageFont.truetype(str(font_path), size)
     left, top, right, bottom = font.getbbox(text)
     img = Image.new("RGB", (right - left + size, bottom - top + size), bg)
@@ -43,7 +43,7 @@ def test_normalize_crops_and_inverts_dark_background():
     ImageDraw.Draw(img).rectangle((50, 30, 89, 69), fill="white")
     out = normalize(img)
     assert out.mode == "L" and out.size == (40, 40)
-    assert out.getpixel((20, 20)) < 50  # el "texto" quedó oscuro
+    assert out.getpixel((20, 20)) < 50  # the "text" is now dark
 
 
 def test_line_height_two_lines():
@@ -74,12 +74,12 @@ def test_recognize_rendered_text(engine, text):
 
 @pytest.mark.parametrize("kanji", ["猫", "本", "日", "水", "語"])
 def test_recognize_single_kanji(engine, kanji):
-    # 本 y 日 sueltos solo se reconocen gracias a la variante repetida (日日日)
+    # standalone 本 and 日 are only recognized thanks to the repeated variant (日日日)
     assert engine.recognize(render(kanji, size=40)) == kanji
 
 
 def test_recognize_small_capture(engine):
-    # captura chica, como un Win+Shift+S de texto de tamaño normal
+    # small screenshot, like a Win+Shift+S of normal-size text
     assert engine.recognize(render("日本語", size=16)) == "日本語"
 
 

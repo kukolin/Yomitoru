@@ -1,4 +1,4 @@
-"""Opciones del usuario, guardadas en settings.json."""
+"""User settings, saved in settings.json."""
 
 from __future__ import annotations
 
@@ -6,9 +6,11 @@ import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
+from .i18n import LANGUAGES, system_language
+
 
 def system_prefers_dark() -> bool:
-    """True si Windows está configurado con el modo oscuro para las aplicaciones."""
+    """True if Windows is set to dark mode for apps."""
     try:
         import winreg
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
@@ -21,34 +23,40 @@ def system_prefers_dark() -> bool:
 
 @dataclass
 class Settings:
-    always_on_top: bool = False
     watch_clipboard: bool = True
-    dark_mode: bool = False
     bring_to_front: bool = True
-    show_english: bool = True
-    save_history: bool = True
+    always_on_top: bool = False
+    dark_mode: bool = False
+    language: str = "en"
 
-    # texto de cada opción en el menú, en orden
-    LABELS = {
-        "watch_clipboard": "Vigilar portapapeles",
-        "bring_to_front": "Mostrar la ventana al capturar",
-        "always_on_top": "Siempre visible",
-        "dark_mode": "Modo oscuro",
-        "show_english": "Mostrar también el significado en inglés",
-        "save_history": "Recordar el historial al cerrar Yomitoru",
+    # toggles in the Options menu, in order (setting name -> i18n text key)
+    TOGGLES = {
+        "bring_to_front": "opt_bring_to_front",
+        "always_on_top": "opt_always_on_top",
+        "dark_mode": "opt_dark_mode",
     }
 
     @classmethod
+    def first_run(cls) -> Settings:
+        """Initial values: theme and language follow Windows."""
+        return cls(dark_mode=system_prefers_dark(), language=system_language())
+
+    @classmethod
     def load(cls, path: Path | None) -> Settings:
-        """Lee el archivo; si no existe (primera vez) el modo oscuro sigue al de Windows."""
         if path is None or not path.is_file():
-            return cls(dark_mode=system_prefers_dark())
+            return cls.first_run()
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
-            return cls(dark_mode=system_prefers_dark())
-        known = {f.name for f in fields(cls)}
-        return cls(**{k: bool(v) for k, v in data.items() if k in known})
+            return cls.first_run()
+        settings = cls.first_run()
+        for f in fields(cls):
+            value = data.get(f.name)
+            if isinstance(value, type(getattr(settings, f.name))):  # ignore invalid types
+                setattr(settings, f.name, value)
+        if settings.language not in LANGUAGES:
+            settings.language = system_language()
+        return settings
 
     def save(self, path: Path | None) -> None:
         if path is None:
@@ -57,4 +65,4 @@ class Settings:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(asdict(self), indent=2), encoding="utf-8")
         except OSError:
-            pass  # no poder guardar opciones no debe romper la app
+            pass  # failing to save settings must not break the app
