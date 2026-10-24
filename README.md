@@ -107,9 +107,10 @@ Press **Win+R**, type `shell:startup` and press Enter. In the folder that opens,
 | Option | What it does | Default |
 | --- | --- | --- |
 | Show the window on capture | brings the window to the front with every screenshot | on |
+| Open jisho.org directly on capture | when the screenshot has Japanese text (kanji or kana), opens it on jisho.org right away instead of showing the window; it's still saved in the history | off |
 | Always on top | keeps the window above other windows | off |
 | Dark mode | dark colors, including the title bar | same as Windows |
-| Language | language of the app and of the meanings | same as Windows |
+| Language | language of the app and of the meanings | English |
 
 The status bar shows when the current lookup happened: **Captured: today 19:42** for a screenshot, or **Searched: today 19:42** if you typed it.
 

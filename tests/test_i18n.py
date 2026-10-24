@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from yomitoru.i18n import DEFAULT_LANGUAGE, LANGUAGES, STRINGS, Translator, system_language
+from yomitoru.i18n import DEFAULT_LANGUAGE, LANGUAGES, STRINGS, Translator
 
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
@@ -47,4 +47,3 @@ def test_spanish_examples():
 def test_fallbacks():
     assert Translator("xx").lang == DEFAULT_LANGUAGE
     assert Translator("es")("missing_key") == "missing_key"
-    assert system_language() in LANGUAGES

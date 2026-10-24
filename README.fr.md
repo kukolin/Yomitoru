@@ -85,7 +85,7 @@ Appuyez sur **Win+R**, tapez `shell:startup` puis Entrée. Dans le dossier qui s
 | **Historique** (ou **Ctrl+H**) | toutes les recherches avec leur date ; double-clic pour en rouvrir une, et un bouton pour l'effacer |
 | **Chercher sur jisho.org** | recherche sur jisho.org le contenu du champ de texte |
 | **Copier** | sélectionnez une lecture ou un sens et appuyez sur **Ctrl+C** (ou clic droit → **Copier**) ; l'icône sous chaque kanji copie directement le kanji |
-| **Options** | afficher la fenêtre à chaque capture, toujours au premier plan, mode sombre et langue |
+| **Options** | afficher la fenêtre à chaque capture, ouvrir directement jisho.org à chaque capture (s'il y a du texte japonais, il est cherché sur jisho.org sans afficher la fenêtre), toujours au premier plan, mode sombre et langue (anglais par défaut : changez-la dans **Options → Langue / Language**) |
 | **Échap** ou le **X** de la fenêtre | masque la fenêtre ; l'application reste dans la zone de notification |
 | Clic droit sur **読** → **Quitter** | ferme complètement Yomitoru Kanji Reader |
 

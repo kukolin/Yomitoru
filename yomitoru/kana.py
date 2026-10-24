@@ -27,6 +27,24 @@ def is_kanji(char: str) -> bool:
     return any(lo <= code <= hi for lo, hi in _KANJI_RANGES)
 
 
+_KANA_RANGES = (
+    (0x3040, 0x309F),  # Hiragana
+    (0x30A0, 0x30FF),  # Katakana
+    (0x31F0, 0x31FF),  # Katakana phonetic extensions
+    (0xFF66, 0xFF9F),  # Half-width katakana
+)
+
+
+def is_kana(char: str) -> bool:
+    code = ord(char)
+    return any(lo <= code <= hi for lo, hi in _KANA_RANGES)
+
+
+def has_japanese(text: str) -> bool:
+    """True if the text has at least one kanji or kana (punctuation and Latin letters do not count)."""
+    return any(is_kanji(c) or (is_kana(c) and c not in "・ー゛゜") for c in text)
+
+
 def extract_kanji(text: str) -> list[str]:
     """Kanji in the text, in order and without repeats (ignores kana, symbols and spaces)."""
     seen: dict[str, None] = {}

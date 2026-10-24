@@ -220,8 +220,8 @@ def menu_labels(menu):
 
 def test_options_menu(app, tmp_path):
     w = app.window
-    assert menu_labels(w.options_menu) == ["Mostrar la ventana al capturar", "Siempre visible", "Modo oscuro",
-                                           "Idioma / Language"]
+    assert menu_labels(w.options_menu) == ["Mostrar la ventana al capturar", "Abrir jisho.org directamente al capturar",
+                                           "Siempre visible", "Modo oscuro", "Idioma / Language"]
     assert menu_labels(w.languages_menu) == list(LANGUAGES.values())
 
     app.search("日")
@@ -337,3 +337,27 @@ def test_mouse_wheel_over_card_text_scrolls_the_list(app):
     app.root.update()
     assert canvas.yview() != before  # the list moved...
     assert meaning.yview()[0] == 0.0  # ...and the text inside the card did not
+
+
+def test_open_jisho_directly(app, monkeypatch):
+    assert pump(app, lambda: app.ocr_ready)
+    opened, shown = [], []
+    monkeypatch.setattr("webbrowser.open", opened.append)
+    monkeypatch.setattr(app.window, "bring_to_front", lambda: shown.append(True))
+    app.set_option("open_jisho", True)
+
+    app.on_capture(render("ありがとう"))  # Japanese without kanji also goes straight to jisho.org
+    assert pump(app, lambda: opened)
+    assert opened == ["https://jisho.org/search/%E3%81%82%E3%82%8A%E3%81%8C%E3%81%A8%E3%81%86"]
+    assert shown == []  # the window did not pop up
+    assert app.history.entries[-1].text == "ありがとう"
+    assert app.window.status_var.get() == "Abierto en jisho.org: ありがとう"
+
+    app.on_capture(render("Escuchando"))  # not Japanese: the app shows up as usual
+    assert pump(app, lambda: shown)
+    assert len(opened) == 1
+
+    app.set_option("open_jisho", False)  # option off: back to the normal behavior
+    app.on_capture(render("猫"))
+    assert pump(app, lambda: app.window.text_var.get() == "猫")
+    assert len(opened) == 1 and len(shown) == 2

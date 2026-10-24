@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.0] — 2026-10-24
+
+- **English is now the default language** for new installs (it used to follow Windows). Change it in **Options → Language**; settings already saved keep their language.
+- New option **Open jisho.org directly on capture**: when a screenshot has Japanese text (kanji or kana), it opens on jisho.org right away without showing the window. The lookup is still saved in the history; if no Japanese text is recognized, the window shows up as usual.
+
 ## [0.3.0] — 2026-10-24
 
 - **New name: Yomitoru Kanji Reader.** The download is now `yomitoru-kanji-reader.exe`, and the repository moves to `kukolin/yomitoru-kanji-reader` (old links redirect).
@@ -36,6 +41,7 @@ First public version.
 - Optional alternative engine: manga-ocr.
 - Portable Windows executable.
 
+[0.4.0]: https://github.com/kukolin/yomitoru-kanji-reader/releases/tag/v0.4.0
 [0.3.0]: https://github.com/kukolin/yomitoru-kanji-reader/releases/tag/v0.3.0
 [0.2.0]: https://github.com/kukolin/yomitoru-kanji-reader/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kukolin/yomitoru-kanji-reader/releases/tag/v0.1.0

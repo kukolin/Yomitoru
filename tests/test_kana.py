@@ -1,4 +1,4 @@
-from yomitoru.kana import extract_kanji, is_kanji, katakana_to_hiragana
+from yomitoru.kana import extract_kanji, has_japanese, is_kanji, katakana_to_hiragana
 
 
 def test_katakana_to_hiragana_basic():
@@ -25,3 +25,9 @@ def test_is_kanji():
 def test_extract_kanji_ignores_kana_and_dedupes():
     assert extract_kanji("日本語を勉強します。日本!") == ["日", "本", "語", "勉", "強"]
     assert extract_kanji("ひらがな カタカナ") == []
+
+
+def test_has_japanese():
+    assert has_japanese("日本") and has_japanese("ありがとう") and has_japanese("コーヒー") and has_japanese("ｶﾀｶﾅ")
+    assert not has_japanese("Escuchando") and not has_japanese("123 abc") and not has_japanese("")
+    assert not has_japanese("・ー")  # Japanese punctuation alone is not text

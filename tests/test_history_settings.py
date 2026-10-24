@@ -88,7 +88,8 @@ def test_source_is_saved(tmp_path):
 def test_settings_roundtrip(tmp_path):
     path = tmp_path / "settings.json"
     s = Settings.load(path)  # first run: defaults
-    assert s.watch_clipboard and s.bring_to_front and not s.always_on_top
+    assert s.watch_clipboard and s.bring_to_front and not s.always_on_top and not s.open_jisho
+    assert s.language == "en"  # English by default, whatever the Windows language
     s.dark_mode = True
     s.language = "ja"
     s.save(path)

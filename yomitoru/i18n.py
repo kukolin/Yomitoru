@@ -6,14 +6,12 @@ keys as "en" (test_i18n checks that none is missing). Anything missing is shown 
 
 from __future__ import annotations
 
-import ctypes
-import locale
 from datetime import datetime
 
 # code -> name in that language, in menu order
 LANGUAGES = {
-    "es": "Español",
     "en": "English",
+    "es": "Español",
     "ja": "日本語",
     "zh": "中文（简体）",
     "ko": "한국어",
@@ -24,17 +22,6 @@ LANGUAGES = {
     "ru": "Русский",
 }
 DEFAULT_LANGUAGE = "en"
-
-
-def system_language() -> str:
-    """Windows language if supported; otherwise English."""
-    try:
-        lcid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
-        code = locale.windows_locale.get(lcid, "")
-    except (AttributeError, OSError):
-        code = locale.getlocale()[0] or ""
-    code = code.split("_")[0].lower()
-    return code if code in LANGUAGES else DEFAULT_LANGUAGE
 
 
 STRINGS: dict[str, dict[str, str]] = {
@@ -82,6 +69,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "No hace falta cambiar el idioma de Windows."
         ),
         "opt_bring_to_front": "Mostrar la ventana al capturar",
+        "opt_open_jisho": "Abrir jisho.org directamente al capturar",
+        "opened_jisho": "Abierto en jisho.org: {text}",
         "opt_always_on_top": "Siempre visible",
         "opt_dark_mode": "Modo oscuro",
         "opt_language": "Idioma",
@@ -170,6 +159,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "You don't need to change your Windows display language."
         ),
         "opt_bring_to_front": "Show the window on capture",
+        "opt_open_jisho": "Open jisho.org directly on capture",
+        "opened_jisho": "Opened on jisho.org: {text}",
         "opt_always_on_top": "Always on top",
         "opt_dark_mode": "Dark mode",
         "opt_language": "Language",
@@ -258,6 +249,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "  5. Yomitoru Kanji Reader を再起動します。"
         ),
         "opt_bring_to_front": "キャプチャ時にウィンドウを表示",
+        "opt_open_jisho": "キャプチャ時に jisho.org を直接開く",
+        "opened_jisho": "jisho.org で開きました: {text}",
         "opt_always_on_top": "常に手前に表示",
         "opt_dark_mode": "ダークモード",
         "opt_language": "言語",
@@ -345,6 +338,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "无需更改 Windows 的显示语言。"
         ),
         "opt_bring_to_front": "截图时显示窗口",
+        "opt_open_jisho": "截图时直接打开 jisho.org",
+        "opened_jisho": "已在 jisho.org 打开：{text}",
         "opt_always_on_top": "窗口置顶",
         "opt_dark_mode": "深色模式",
         "opt_language": "语言",
@@ -433,6 +428,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "Windows 표시 언어를 바꿀 필요는 없습니다."
         ),
         "opt_bring_to_front": "캡처할 때 창 표시",
+        "opt_open_jisho": "캡처할 때 jisho.org 바로 열기",
+        "opened_jisho": "jisho.org에서 열었습니다: {text}",
         "opt_always_on_top": "항상 위에 표시",
         "opt_dark_mode": "다크 모드",
         "opt_language": "언어",
@@ -521,6 +518,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "Inutile de changer la langue d'affichage de Windows."
         ),
         "opt_bring_to_front": "Afficher la fenêtre à chaque capture",
+        "opt_open_jisho": "Ouvrir directement jisho.org à chaque capture",
+        "opened_jisho": "Ouvert sur jisho.org : {text}",
         "opt_always_on_top": "Toujours au premier plan",
         "opt_dark_mode": "Mode sombre",
         "opt_language": "Langue",
@@ -610,6 +609,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "Não é preciso mudar o idioma do Windows."
         ),
         "opt_bring_to_front": "Mostrar a janela ao capturar",
+        "opt_open_jisho": "Abrir o jisho.org direto ao capturar",
+        "opened_jisho": "Aberto no jisho.org: {text}",
         "opt_always_on_top": "Sempre visível",
         "opt_dark_mode": "Modo escuro",
         "opt_language": "Idioma",
@@ -698,6 +699,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "Die Anzeigesprache von Windows musst du nicht ändern."
         ),
         "opt_bring_to_front": "Fenster bei jedem Screenshot anzeigen",
+        "opt_open_jisho": "Bei Aufnahme direkt jisho.org öffnen",
+        "opened_jisho": "Auf jisho.org geöffnet: {text}",
         "opt_always_on_top": "Immer im Vordergrund",
         "opt_dark_mode": "Dunkelmodus",
         "opt_language": "Sprache",
@@ -788,6 +791,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "Non serve cambiare la lingua di Windows."
         ),
         "opt_bring_to_front": "Mostra la finestra a ogni cattura",
+        "opt_open_jisho": "Apri direttamente jisho.org a ogni cattura",
+        "opened_jisho": "Aperto su jisho.org: {text}",
         "opt_always_on_top": "Sempre in primo piano",
         "opt_dark_mode": "Modalità scura",
         "opt_language": "Lingua",
@@ -877,6 +882,8 @@ STRINGS: dict[str, dict[str, str]] = {
             "Менять язык интерфейса Windows не нужно."
         ),
         "opt_bring_to_front": "Показывать окно при снимке",
+        "opt_open_jisho": "Сразу открывать jisho.org при снимке",
+        "opened_jisho": "Открыто на jisho.org: {text}",
         "opt_always_on_top": "Поверх всех окон",
         "opt_dark_mode": "Тёмная тема",
         "opt_language": "Язык",

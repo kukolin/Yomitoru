@@ -7,6 +7,7 @@ import ctypes
 import queue
 import sys
 import tkinter as tk
+import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tkinter import messagebox
@@ -18,7 +19,8 @@ from .clipboard import ClipboardWatcher
 from .dictionary import KanjiDictionary, OutdatedDictionaryError
 from .history import CAPTURE, SEARCH, History, HistoryEntry
 from .i18n import Translator
-from .lookup import lookup_text
+from .kana import has_japanese
+from .lookup import jisho_word_url, lookup_text
 from .ocr import OcrEngine, OcrUnavailableError, create_engine
 from .paths import config_dir, find_db
 from .settings import Settings
@@ -140,9 +142,14 @@ class YomitoruApp:
         if self.tray:
             self.tray.refresh()
 
+    @property
+    def direct_to_jisho(self) -> bool:
+        """«Open jisho.org directly»: Japanese text goes to the browser without showing the window."""
+        return self.settings.open_jisho and self.ocr_ready
+
     def on_capture(self, image: Image.Image):
         self.window.set_capture(image)
-        if self.settings.bring_to_front:
+        if self.settings.bring_to_front and not self.direct_to_jisho:
             self.window.bring_to_front()
         if not self.ocr_ready:
             self.window.set_status("capture_no_ocr")
@@ -155,10 +162,23 @@ class YomitoruApp:
         try:
             text = future.result()
         except Exception as e:  # noqa: BLE001 - reported in the window
+            self._show_if_direct()
             self.window.set_status("ocr_error", error=e)
             return
         self.window.set_text(text)
+        if self.direct_to_jisho and has_japanese(text):
+            compact = "".join(text.split())
+            webbrowser.open(jisho_word_url(compact))
+            self.search(text, source=CAPTURE)  # still saved in the history, window updated in the background
+            self.window.set_status("opened_jisho", text=compact)
+            return
+        self._show_if_direct()  # nothing Japanese recognized: show the app so it can be fixed by hand
         self.search(text, source=CAPTURE)
+
+    def _show_if_direct(self):
+        """In «open jisho.org directly» mode the window was not shown on capture; show it now."""
+        if self.direct_to_jisho and self.settings.bring_to_front:
+            self.window.bring_to_front()
 
     # --- search
     def search(self, text: str, source: str = SEARCH):
